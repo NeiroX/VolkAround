@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Historical Landmarks Tour",
+    "points": [
+      {
+        "name": "Shalom Meir Tower",
+        "address": "Tel Aviv-Yafo, Shalom Meir Tower",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg",
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Welcome to Point 1! This is an iconic landmark."
+      },
+      {
+        "name": "Park Avenue Landmark",
+        "address": "456 Park Ave, Townsville",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Welcome to Point 2! A hidden gem of the city."
+      }
+    ]
+  },
+  {
+    "name": "Historical Landmarks Tour 2",
+    "points": [
+      {
+        "name": "Shalom Meir Tower",
+        "address": "Tel Aviv-Yafo, Shalom Meir Tower",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg",
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Welcome to Point 1! This is an iconic landmark."
+      },
+      {
+        "name": "Park Avenue Landmark",
+        "address": "456 Park Ave, Townsville",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Welcome to Point 2! A hidden gem of the city."
+      }
+    ]
+  }
+]
