@@ -40,3 +40,14 @@ class Point:
 
     def get_info(self) -> Dict[str, str]:
         return {"text": self.text, "photos": self.photos, "audio": self.audio}
+
+    def to_dict(self) -> dict:
+        """Convert the point to a dictionary for JSON serialization."""
+        return {
+            "name": self.name,
+            "address": self.address,
+            "location_photo": self.location_photo,
+            "photos": self.photos,
+            "audio": self.audio,
+            "text": self.text
+        }

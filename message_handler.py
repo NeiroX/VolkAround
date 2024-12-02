@@ -23,29 +23,34 @@ class MessageHandler:
         )
 
     @staticmethod
-    async def send_excursions_list(query: CallbackQuery, user_state: UserState, excursions: list[Excursion]) -> None:
+    async def send_excursions_list(query: CallbackQuery, user_state: UserState, excursions: dict[str, Excursion]) -> None:
         keyboard = []
 
-        for excursion in excursions:
-            button_text = excursion.get_name()
+        for excursion_name, excursion_obj in excursions.items():
+            button_text = excursion_name
             # Disable button for paid excursions if user doesn't have paid access
-            if excursion.is_paid_excursion() and not user_state.does_have_access(excursion):
-                button_text = f"{BLOCK_EMOJI} {excursion.get_name()}"
+            if excursion_obj.is_paid_excursion() and not user_state.does_have_access(excursion_obj):
+                button_text = f"{BLOCK_EMOJI} {excursion_name}"
                 callback_data = DISABLED_CALLBACK
-            else:
-                if user_state.is_excursion_completed(excursion):
-                    button_text = f"{CHECK_MARK_EMOJI} {excursion.get_name()}"
-                callback_data = f"{CHOOSE_CALLBACK}{excursion.get_name()}"
+            elif excursion_obj.is_paid_excursion() and user_state.does_have_access(excursion_obj):
+                button_text = f"{MONEY_SACK_EMOJI} {button_text}"
+
+            if user_state.is_excursion_completed(excursion_obj):
+                button_text = f"{CHECK_MARK_EMOJI} {button_text}"
+            callback_data = f"{CHOOSE_CALLBACK}{excursion_obj.get_id()}"
 
             keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
 
+        keyboard.append([InlineKeyboardButton(SYNC_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.message.reply_text(
-            EXCURSIONS_LIST_MESSAGE,
-            reply_markup=reply_markup
-        )
-
+        if query.message:
+            await query.message.reply_text(
+                EXCURSIONS_LIST_MESSAGE,
+                reply_markup=reply_markup
+            )
+        else:
+            print("Error: query.message is None")
 
     @staticmethod
     async def send_excursion_start_message(query, excursion) -> None:
@@ -123,11 +128,10 @@ class MessageHandler:
             if audio_file:
                 with open(audio_file, "rb") as audio:
                     await query.message.reply_audio(audio=audio)
-            else:
-                await MessageHandler.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
-        else:
-            text_content = point.get_text()
-            await query.message.reply_text(text_content)
+                    return
+            await MessageHandler.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
+        text_content = point.get_text()
+        await query.message.reply_text(text_content)
 
     @staticmethod
     async def send_feedback_request(query: CallbackQuery) -> None:
@@ -161,7 +165,7 @@ class MessageHandler:
     @staticmethod
     async def send_move_on_request(query: CallbackQuery) -> None:
         """Requests the user to confirm moving to the next point."""
-        keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
+        keyboard = [[InlineKeyboardButton(MOVE_ON_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.message.reply_text(MOVE_ON_REQUEST_MESSAGE, reply_markup=reply_markup)

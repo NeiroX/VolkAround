@@ -6,13 +6,17 @@ from constants import EXCURSIONS_INFO_PATH
 
 
 class Excursion:
-    def __init__(self, name: str, points: List[Point], is_paid: bool = False, likes_num: int = 0,
+    def __init__(self, excursion_id: int, name: str, points: List[Point],  is_paid: bool = False, likes_num: int = 0,
                  dislikes_num: int = 0) -> None:
+        self.id = excursion_id
         self.points = points
         self.name = name
         self.is_paid = is_paid  # True if paid, False if trial
         self.likes_num = likes_num
         self.dislikes_num = dislikes_num
+
+    def get_id(self) -> int:
+        return self.id
 
     def get_name(self) -> str:
         return self.name
@@ -39,44 +43,19 @@ class Excursion:
     def is_paid_excursion(self) -> bool:
         return self.is_paid
 
-    def save_info(self) -> None:
-        """Saves the excursion's updated information to the JSON file."""
-        try:
-            json_file = EXCURSIONS_INFO_PATH
-            if not os.path.exists(json_file):
-                raise FileNotFoundError(f"JSON file '{json_file}' does not exist.")
+    def get_points(self) -> List[Point]:
+        return self.points
 
-            # Read the existing data from the JSON file
-            with open(json_file, "r", encoding="utf-8") as file:
-                data = json.load(file)
-
-            # Update the relevant excursion data
-            for excursion in data:
-                if excursion["name"] == self.name:
-                    excursion["is_paid"] = self.is_paid
-                    excursion["likes_num"] = self.likes_num
-                    excursion["dislikes_num"] = self.dislikes_num
-                    excursion["points"] = [
-                        {
-                            "name": point.get_name(),
-                            "address": point.get_address(),
-                            "location_photo": point.get_location_photo(),
-                            "photos": point.get_photos(),
-                            "audio": point.get_audio(),
-                            "text": point.get_text(),
-                        }
-                        for point in self.points
-                    ]
-                    break
-            else:
-                raise ValueError(f"Excursion '{self.name}' not found in JSON file.")
-
-            # Write the updated data back to the JSON file
-            with open(json_file, "w", encoding="utf-8") as file:
-                json.dump(data, file, ensure_ascii=False, indent=4)
-
-        except Exception as e:
-            print(f"Error saving excursion data: {e}")
+    def to_dict(self) -> dict:
+        """Convert the excursion to a dictionary for JSON serialization."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "is_paid": self.is_paid,
+            "likes_num": self.likes_num,
+            "dislikes_num": self.dislikes_num,
+            "points": [point.to_dict() for point in self.points]
+        }
 
     @staticmethod
     def _validate_info_files(point: Point) -> None:
@@ -88,7 +67,7 @@ class Excursion:
                     raise FileNotFoundError(f"Photo file not found: {', '.join(point.get_photos())}")
 
         audio_file = point.get_audio()
-        if not os.path.exists(audio_file) and audio_file is not None:
+        if audio_file is not None and not os.path.exists(audio_file):
             raise FileNotFoundError(f"Audio file not found: {audio_file}")
 
     @staticmethod

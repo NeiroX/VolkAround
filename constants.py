@@ -1,3 +1,5 @@
+import os
+
 # Emojis
 LIKE_EMOJI = u"\U0001F44D"  # 👍
 DISLIKE_EMOJI = u"\U0001F44E"  # 👎
@@ -16,16 +18,18 @@ MONEY_BAG_EMOJI = "\U0001F4B0"  # 💰
 STOPWATCH_EMOJI = "\U000023F3"  # ⏳
 BOOK_EMOJI = "\U0001F4D6"  # 📖
 MIRROR_EMOJI = "\U0001FA9E"  # 🪞
+MONEY_SACK_EMOJI = "\U0001F4B0"  # 💰
+SYNC_EMOJI = "\U0001F504"  # 🔄
 
 # Paths
-EXCURSIONS_INFO_PATH = "excursions.json"
+USER_STATES_PATH = os.path.abspath("data/user_states.json")
+EXCURSIONS_INFO_PATH = os.path.abspath("data/excursions.json")
 
 # User state modes
 AUDIO_MODE = "audio"
 TEXT_MODE = "text"
 AUDIO_MODE_RU = 'аудио формат'
 TEXT_MODE_RU = 'текстовый формат'
-
 
 # Commands
 START_COMMAND = 'start'
@@ -72,6 +76,7 @@ FEEDBACK_CONGRATS_MESSAGE = (
 EXCURSIONS_LIST_MESSAGE = f"Вот список доступных экскурсий. Выбирайте любую и вперед! {LOCATION_PIN_EMOJI}"
 
 # Buttons labels
+SYNC_BUTTON = f"Синхронизировать {SYNC_EMOJI}"
 MOVE_ON_BUTTON = f"Да, я готов двигаться дальше! {CHECK_MARK_EMOJI}"
 VIEW_EXCURSIONS_BUTTON = f"Посмотреть экскурсии {BACK_ARROW_EMOJI}"
 START_TOUR_BUTTON = f"Начать экскурсию {STAR_EMOJI}"
@@ -86,6 +91,7 @@ SHOW_EXCURSIONS_CALLBACK = "show_excursions"
 DISABLED_CALLBACK = "disabled"
 NEXT_POINT_CALLBACK = "next_point"
 CHOOSE_CALLBACK = "choose_"
+SHOW_EXCURSIONS_SYNC_CALLBACK = "show_excursions_sync"
 ARRIVED_CALLBACK = "arrived"
 FINISH_CALLBACK = "finish_"
 FEEDBACK_CALLBACK = "feedback_"

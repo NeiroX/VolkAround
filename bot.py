@@ -5,23 +5,29 @@ from message_handler import MessageHandler  # Assuming MessageHandler is in a se
 from excursion import Excursion
 from point import Point
 from user_state import UserState
-from typing import List
+from jsonmanager import JSONManager
 from constants import *
 
 
 class Bot:
     """The main bot class coordinating everything."""
 
-    def __init__(self, token, excursions: List[Excursion]):
+    def __init__(self, token):
         self.application = Application.builder().token(token).build()
-        self.user_states = {}  # Keeps track of UserState objects for each user
-        self.excursions = excursions  # List of all available excursions
+        self.user_states = JSONManager.load_user_states_from_json()  # Keeps track of UserState objects for each user
+        self.excursions = JSONManager.load_excursions_from_json()  # Dictionary of all available excursions
 
     def get_user_state(self, user_id: int, username: str = None):
         """Gets or creates the user state for the given user."""
         if user_id not in self.user_states:
             self.user_states[user_id] = UserState(username=username, user_id=user_id)
+            self.user_states[user_id].add_paid_excursion(self.excursions["Мир Оксимирона: Комнаты творчества"])
+            JSONManager.save_user_state(self.user_states[user_id])
         return self.user_states[user_id]
+
+    def sync_data(self) -> None:
+        self.user_states = JSONManager.load_user_states_from_json()  # Keeps track of UserState objects for each user
+        self.excursions = JSONManager.load_excursions_from_json()
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the /start command."""
@@ -35,9 +41,14 @@ class Bot:
         """Displays the list of available excursions based on user access."""
         query = update.callback_query
         user_id = query.from_user.id
+        print(query.data)
+        if query.data == SHOW_EXCURSIONS_SYNC_CALLBACK:
+            self.sync_data()
         user_state = self.get_user_state(user_id)
         user_state.reset_current_excursion()
         await MessageHandler.delete_previous_buttons(query)
+        print(f"Sending excursions list for user {user_state.username}")
+        print(f"Available excursions: {list(self.excursions.keys())}")
         await MessageHandler.send_excursions_list(query, user_state, self.excursions)
         await query.answer()  # Acknowledge the callback query to avoid "loading" state.
 
@@ -60,26 +71,28 @@ class Bot:
             await MessageHandler.send_error_message(query, INVALID_SELECTION_ERROR)
             return
 
-        action, excursion_name = data
+        action, excursion_id = data
         if action != "choose":
             await MessageHandler.send_error_message(query, INVALID_ACTION_ERROR)
             return
 
         # Find the chosen current_excursion from the list of excursions
-        chosen_excursion = next((e for e in self.excursions if e.get_name() == excursion_name), None)
-        print("Chosen excursion: " + chosen_excursion.get_name())
+        chosen_excursion = next(
+            ((name, excursion) for name, excursion in self.excursions.items() if
+             excursion.get_id() == int(excursion_id)), None)
+        print("Chosen excursion: " + chosen_excursion[0])
         if chosen_excursion is None:
             await MessageHandler.send_error_message(query, EXCURSION_DOES_NOT_EXISTS_ERROR)
             return
 
         # If it's a paid current_excursion and the user doesn't have paid access
-        if chosen_excursion.is_paid_excursion() and not user_state.has_paid_access:
+        if chosen_excursion[1].is_paid_excursion() and not user_state.does_have_access(chosen_excursion[1]):
             await MessageHandler.send_error_message(query, PAID_EXCURSION_ERROR)
             return
 
         # Set the user's current current_excursion and start it
-        user_state.set_excursion(chosen_excursion)
-        await self.start_excursion(update, chosen_excursion)
+        user_state.set_excursion(chosen_excursion[1])
+        await self.start_excursion(update, chosen_excursion[1])
 
     async def start_excursion(self, update: Update, excursion: Excursion):
         """Starts the selected current_excursion."""
@@ -90,7 +103,6 @@ class Bot:
         user_id = query.from_user.id
         user_state = self.get_user_state(user_id)
 
-        user_state.point_index = 0  # Reset the point index
         point = user_state.get_point()  # Get the information for the current point
 
         # Send introduction information about the current_excursion
@@ -164,6 +176,7 @@ class Bot:
         # Notify user of completion
         excursion_name = user_state.get_current_excursion().get_name()
         user_state.add_completed_excursion(user_state.get_current_excursion())
+        JSONManager.save_user_state(user_state)
         await query.message.reply_text(
             f"Поздравляю! Вы завершили {excursion_name}! {CONGRATULATIONS_EMOJI}")
 
@@ -185,7 +198,7 @@ class Bot:
         else:
             user_state.get_current_excursion().dislike()
         # Save updated info
-        user_state.get_current_excursion().save_info()
+        JSONManager.save_excursion_data(user_state.get_current_excursion())
         await MessageHandler.send_feedback_response(query)
 
     @staticmethod
@@ -198,6 +211,7 @@ class Bot:
         self.application.add_handler(CommandHandler(START_COMMAND, self.start))
         self.application.add_handler(CommandHandler(CHANGE_MODE_COMMAND, self.change_mode))
         self.application.add_handler(CommandHandler(VIEW_EXCURSIONS_COMMAND, self.move_to_excursions_list))
+        self.application.add_handler(CallbackQueryHandler(self.show_excursions, pattern=f"^{SHOW_EXCURSIONS_CALLBACK}"))
         self.application.add_handler(CallbackQueryHandler(self.show_excursions, pattern=f"^{SHOW_EXCURSIONS_CALLBACK}"))
         self.application.add_handler(
             CallbackQueryHandler(self.disabled_button_handler, pattern=f"^{DISABLED_CALLBACK}$"))
