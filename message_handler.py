@@ -141,6 +141,7 @@ class MessageHandler:
             [InlineKeyboardButton(f"{DISLIKE_EMOJI} {COULD_BE_BETTER_BUTTON}",
                                   callback_data=FEEDBACK_NEGATIVE_CALLBACK)],
             [InlineKeyboardButton(VIEW_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)],
+            [InlineKeyboardButton(CONNECT_TO_VOLK, url=MESSAGE_TO_VOLK_URL)]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 

@@ -3,7 +3,8 @@ from excursion import Excursion
 from point import Point
 import os
 import json
-from constants import EXCURSIONS_INFO_PATH, USER_STATES_PATH, TEXT_MODE
+from constants import EXCURSIONS_INFO_PATH, USER_STATES_PATH, TEXT_MODE, DEFAULT_TEXT, DEFAULT_ADDRESS, \
+    DEFAULT_EXCURSION_NAME
 from user_state import UserState
 
 
@@ -21,7 +22,7 @@ class JSONManager:
 
         for excursion_data in data:  # Iterate through each current_excursion in the JSON
             excursion_id = excursion_data["id"]
-            excursion_name = excursion_data.get("name", "Unnamed Excursion")
+            excursion_name = excursion_data.get("name", DEFAULT_EXCURSION_NAME)
             is_paid_excursion = excursion_data.get("is_paid", False)
             likes_num = excursion_data.get("likes_num", 0)
             dislikes_num = excursion_data.get("dislikes_num", 0)
@@ -30,12 +31,12 @@ class JSONManager:
 
             for point_data in points_data:  # Iterate through each point in the current_excursion
                 point = Point(
-                    name=point_data.get("name", "Unnamed Point"),
-                    address=point_data.get("address", Point.DEFAULT_ADDRESS),
+                    name=point_data.get("name", DEFAULT_EXCURSION_NAME),
+                    address=point_data.get("address", DEFAULT_ADDRESS),
                     location_photo=point_data.get("location_photo"),
                     photos=point_data.get("photos", []),
                     audio=point_data.get("audio"),
-                    text=point_data.get("text", Point.DEFAULT_TEXT)
+                    text=point_data.get("text", DEFAULT_TEXT)
                 )
                 points.append(point)
 

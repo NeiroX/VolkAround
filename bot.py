@@ -87,7 +87,7 @@ class Bot:
 
         # If it's a paid current_excursion and the user doesn't have paid access
         if chosen_excursion[1].is_paid_excursion() and not user_state.does_have_access(chosen_excursion[1]):
-            await MessageHandler.send_error_message(query, PAID_EXCURSION_ERROR)
+            await MessageHandler.send_error_message(query, ACCESS_ERROR)
             return
 
         # Set the user's current current_excursion and start it

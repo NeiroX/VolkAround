@@ -1,16 +1,18 @@
 from typing import List, Dict
+from constants import *
+# from optional_point import OptionalPoint
 
 
 class Point:
-    DEFAULT_TEXT = "Sorry, text is not provided for this point"
-    DEFAULT_ADDRESS = "Sorry, address is not provided for this point"
 
     def __init__(self, address: str = DEFAULT_ADDRESS, location_photo: str = None, photos: List[str] = None,
                  audio: str = None, text: str = DEFAULT_TEXT, name: str = None):
+                 # optional_points: Dict[str, OptionalPoint] = None):
         # Location info
         self.name = name
         self.address = address
         self.location_photo = location_photo
+        # self.optional_points = optional_points if optional_points is not None else {}
 
         # Point information
         self.text = text

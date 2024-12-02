@@ -44,11 +44,10 @@ INVALID_SELECTION_ERROR = f"Выбор некорректен. Попробуй�
 INVALID_ACTION_ERROR = f"Неправильное действие! Давайте попробуем еще раз. {THINKING_FACE_EMOJI}"
 ACCESS_ERROR = f"У вас нет доступа к этой экскурсии. Может, стоит открыть кошелек? {BLOCK_EMOJI}"
 AUDIO_IS_NOT_FOUND_ERROR = f"Простите, но аудио для этой точки затерялось где-то в архивах. {DISLIKE_EMOJI}"
+DEFAULT_TEXT = "Sorry, text is not provided for this point"
+DEFAULT_ADDRESS = "Sorry, address is not provided for this point"
 
 # Default messages
-INTRO_HAS_ACCESS_MESSAGE = (
-    f"Ура! Проведем время вместе!{CONGRATULATIONS_EMOJI}{STAR_EMOJI} Вы можете насладиться бесплатными пробными экскурсиями или приобрести другие по [ссылке]."
-)
 INTRO_NO_ACCESS_MESSAGE = (
     f"{FOLDED_HANDS_EMOJI}{MONEY_BAG_EMOJI}Вы можете насладиться бесплатными пробными экскурсиями или приобрести другие по [ссылке]."
 )
@@ -83,8 +82,15 @@ START_TOUR_BUTTON = f"Начать экскурсию {STAR_EMOJI}"
 IM_HERE_BUTTON = f"Я на месте! {LOCATION_PIN_EMOJI}"
 LOVED_IT_BUTTON = f"Очень понравилось! {LIKE_EMOJI}"
 COULD_BE_BETTER_BUTTON = f"Могло быть лучше. {DISLIKE_EMOJI}"
+CONNECT_TO_VOLK = f"Написать автору"
 BACK_TO_EXCURSIONS_BUTTON = f"{BACK_ARROW_EMOJI} Вернуться к экскурсиям"
 TRANSITION_CONFIRMATION_BUTTON = f"Хочу перейти к списку {BACK_ARROW_EMOJI}"
+
+# Default settings to excursion labels
+DEFAULT_EXCURSION_NAME = "Название засекречено"
+
+# URLs
+MESSAGE_TO_VOLK_URL = "https://t.me/ZeevVolk"
 
 # Callback Data Constants
 SHOW_EXCURSIONS_CALLBACK = "show_excursions"
