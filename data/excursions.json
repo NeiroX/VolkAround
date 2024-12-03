@@ -3,7 +3,7 @@
         "id": 0,
         "name": "Хроники Тель-Авива",
         "is_paid": false,
-        "likes_num": 21,
+        "likes_num": 23,
         "dislikes_num": 3,
         "points": [
             {
@@ -162,7 +162,7 @@
         "name": "Мир Оксимирона: Комнаты творчества",
         "is_paid": true,
         "likes_num": 25,
-        "dislikes_num": 1,
+        "dislikes_num": 2,
         "points": [
             {
                 "name": "Прихожая: Начало пути",

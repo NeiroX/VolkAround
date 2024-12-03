@@ -17,6 +17,7 @@ class UserState:
         self.completed_excursions = completed_excursions if completed_excursions is not None else []
 
     def change_mode(self) -> None:
+        print("Current user mode: ", self.mode)
         self.mode = AUDIO_MODE if self.mode == TEXT_MODE else TEXT_MODE
 
     def get_username(self) -> str:
@@ -62,7 +63,7 @@ class UserState:
         self.paid_excursions.append(excursion.get_name())
 
     def get_mode(self) -> str:
-        return AUDIO_MODE_RU if self.mode == TEXT_MODE else TEXT_MODE_RU
+        return AUDIO_MODE_RU if self.mode == AUDIO_MODE else TEXT_MODE_RU
 
     def to_dict(self):
         """Convert the user state to a dictionary for JSON serialization."""

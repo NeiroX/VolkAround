@@ -29,15 +29,14 @@ class MessageHandler:
         for excursion_name, excursion_obj in excursions.items():
             button_text = excursion_name
             # Disable button for paid excursions if user doesn't have paid access
+            callback_data = f"{CHOOSE_CALLBACK}{excursion_obj.get_id()}"
             if excursion_obj.is_paid_excursion() and not user_state.does_have_access(excursion_obj):
                 button_text = f"{BLOCK_EMOJI} {excursion_name}"
                 callback_data = DISABLED_CALLBACK
             elif excursion_obj.is_paid_excursion() and user_state.does_have_access(excursion_obj):
                 button_text = f"{MONEY_SACK_EMOJI} {button_text}"
-
             if user_state.is_excursion_completed(excursion_obj):
                 button_text = f"{CHECK_MARK_EMOJI} {button_text}"
-            callback_data = f"{CHOOSE_CALLBACK}{excursion_obj.get_id()}"
 
             keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
 
@@ -89,7 +88,7 @@ class MessageHandler:
                     photo=photo,
                     caption=(
                         f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                        f"{LOCATION_PIN_EMOJI} Адресс: *{point.get_address()}*"
+                        f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*"
                     ),
                     parse_mode="Markdown",
                     reply_markup=reply_markup,
@@ -98,7 +97,7 @@ class MessageHandler:
             await query.message.reply_text(
                 f"Ваш следующий пункт назначения:\n\n"
                 f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                f"{LOCATION_PIN_EMOJI} Адресс: *{point.get_address()}*",
+                f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup,
             )
