@@ -1,11 +1,15 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto
-from constants import *
-from excursion import Excursion
-from point import Point
-from user_state import UserState
+
+from src.components.user.user_state import UserState
+from src.constants import *
+from src.components.excursion.point.point import Point
+from src.components.excursion.point.information_part import InformationPart
+
+from src.components.excursion.excursion import Excursion
+from typing import Dict
 
 
-class MessageHandler:
+class MessageSender:
     """Handles message formatting and sending."""
 
     @staticmethod
@@ -18,15 +22,18 @@ class MessageHandler:
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(
-            f"{WELCOME_MESSAGE}\n\n{INTRO_NO_ACCESS_MESSAGE}\n\nВыберите экскурсию из списка ниже:",
+            f"{WELCOME_MESSAGE}\n\n{INTRO_ACCESS_MESSAGE}\n\nВыберите экскурсию из списка ниже:",
             reply_markup=reply_markup,
         )
 
     @staticmethod
-    async def send_excursions_list(query: CallbackQuery, user_state: UserState, excursions: dict[str, Excursion]) -> None:
+    async def send_excursions_list(query: CallbackQuery, user_state: UserState,
+                                   excursions: Dict[str, Excursion]) -> None:
         keyboard = []
 
         for excursion_name, excursion_obj in excursions.items():
+            if excursion_obj.is_draft_excursion() and not user_state.does_have_admin_access():
+                continue
             button_text = excursion_name
             # Disable button for paid excursions if user doesn't have paid access
             callback_data = f"{CHOOSE_CALLBACK}{excursion_obj.get_id()}"
@@ -37,10 +44,18 @@ class MessageHandler:
                 button_text = f"{MONEY_SACK_EMOJI} {button_text}"
             if user_state.is_excursion_completed(excursion_obj):
                 button_text = f"{CHECK_MARK_EMOJI} {button_text}"
+            if user_state.does_have_admin_access():
+                if excursion_obj.is_draft_excursion():
+                    button_text = f"{DRAFT_EMOJI} {button_text}"
+                else:
+                    button_text = f"{PUBLISHED_EMOJI} {button_text}"
 
             keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
 
         keyboard.append([InlineKeyboardButton(SYNC_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)])
+        if user_state.does_have_admin_access():
+            keyboard.append([InlineKeyboardButton(ADD_EXCURSION_BUTTON, callback_data=ADD_EXCURSION_CALLBACK)])
+
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         if query.message:
@@ -52,21 +67,38 @@ class MessageHandler:
             print("Error: query.message is None")
 
     @staticmethod
-    async def send_excursion_start_message(query, excursion) -> None:
-        """Sends the starting information for the excursion."""
+    async def send_excursion_start_message(query: CallbackQuery, excursion: Excursion, is_admin: bool) -> None:
+        """Sends the starting information for the components."""
         await query.answer(f"Вы выбрали {excursion.get_name()}. Начнем наш тур!")
         keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
+        if is_admin:
+            keyboard.append([InlineKeyboardButton(EDIT_EXCURSION_BUTTON, callback_data=NEXT_POINT_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(PUBLISH_EXCURSION_BUTTON,
+                                                  callback_data=f"{PUBLISH_CHOSEN_EXCURSION_CALLBACK}"
+                                                                f"{excursion.get_id()}")])
+            keyboard.append([InlineKeyboardButton(EDIT_POINTS_BUTTON, callback_data=EDIT_POINTS_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(CHANGE_POINTS_ORDER_BUTTON,
+                                                  callback_data=CHANGE_POINTS_ORDER_CALLBACK)])
         reply_markup = InlineKeyboardMarkup(keyboard)
-
         await query.message.reply_text(
             f"Добро пожаловать в {excursion.get_name()}! {STAR_EMOJI}\n\n{EXCURSION_START_MESSAGE}",
             reply_markup=reply_markup,
         )
 
     @staticmethod
-    async def send_error_message(query: CallbackQuery, error_message: str, is_alert: bool = False) -> None:
+    async def send_error_message(query: CallbackQuery, error_message: str, is_alert: bool = False,
+                                 is_admin: bool = False) -> None:
         """Sends the error message."""
-        await query.answer(error_message, show_alert=is_alert)
+        if is_admin and not is_admin and query.message:
+            keyboard = [[InlineKeyboardButton(WRITE_TO_DEVELOPER_BUTTON, url=MESSAGE_TO_DEVELOPER_URL)]]
+            reply_markup = InlineKeyboardMarkup(
+                keyboard)
+            await query.message.reply_text(error_message, parse_mode="Markdown",
+                                           reply_markup=reply_markup)
+        elif query:
+            await query.answer(error_message, show_alert=is_alert)
+        else:
+            print("Error: query.message is None")
 
     @staticmethod
     async def delete_previous_buttons(query):
@@ -78,7 +110,7 @@ class MessageHandler:
 
     @staticmethod
     async def send_point_location_info(query, point) -> None:
-        """Sends location details (photo, name, address) for the current point."""
+        """Sends location details (photo, name, address) for the current part."""
         keyboard = [[InlineKeyboardButton(IM_HERE_BUTTON, callback_data=ARRIVED_CALLBACK)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -103,9 +135,9 @@ class MessageHandler:
             )
 
     @staticmethod
-    async def send_part(query, point: Point, mode: str) -> None:
-        """Sends the current part (introduction, middle, or conclusion) of a point."""
-        photos = point.get_photos()  # Assumes this returns a list of photo file paths
+    async def send_part(query, part: InformationPart | Point, mode: str) -> None:
+        """Sends the current part (introduction, middle, or conclusion) of a part."""
+        photos = part.get_photos()  # Assumes this returns a list of photo file paths
         media_group = []
 
         if photos:
@@ -121,20 +153,22 @@ class MessageHandler:
 
             if media_group:
                 await query.message.reply_media_group(media_group)
-
         if mode == AUDIO_MODE:
-            audio_file = point.get_audio()
+            audio_file = part.get_audio()
             if audio_file:
                 with open(audio_file, "rb") as audio:
                     await query.message.reply_audio(audio=audio)
-                    return
-            await MessageHandler.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
-        text_content = point.get_text()
+                    if part.get_link():
+                        await query.message.reply_text(part.get_link())
+            await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
+        text_content = part.get_text()
+        if part.get_link():
+            text_content = f"{text_content}\n{part.get_link()}"
         await query.message.reply_text(text_content)
 
     @staticmethod
     async def send_feedback_request(query: CallbackQuery) -> None:
-        """Requests feedback from the user after completing an excursion."""
+        """Requests feedback from the user after completing a components."""
         keyboard = [
             [InlineKeyboardButton(f"{LIKE_EMOJI} {LOVED_IT_BUTTON}", callback_data=FEEDBACK_POSITIVE_CALLBACK)],
             [InlineKeyboardButton(f"{DISLIKE_EMOJI} {COULD_BE_BETTER_BUTTON}",
@@ -163,11 +197,18 @@ class MessageHandler:
             await query.message.reply_text(NEGATIVE_FEEDBACK_MESSAGE, reply_markup=reply_markup)
 
     @staticmethod
-    async def send_move_on_request(query: CallbackQuery) -> None:
-        """Requests the user to confirm moving to the next point."""
+    async def send_move_on_request(query: CallbackQuery, point: Point) -> None:
+        """Requests the user to confirm moving to the next part."""
         keyboard = [[InlineKeyboardButton(MOVE_ON_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
 
+        if point.extra_information_points:
+            extra_information_points = point.get_extra_information_points()
+            for num, elem in enumerate(extra_information_points):
+                print("Send move on request")
+                print(num, elem.get_name())
+                keyboard.append([InlineKeyboardButton(elem.get_name(), callback_data=EXTRA_PART_CALLBACK + str(num))])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_text(MOVE_ON_REQUEST_MESSAGE, reply_markup=reply_markup)
 
     @staticmethod

@@ -1,227 +1,262 @@
 [
-    {
+  {
+    "id": 0,
+    "name": "Хроники Тель-Авива",
+    "is_draft": false,
+    "is_paid": false,
+    "likes_num": 25,
+    "dislikes_num": 3,
+    "points": [
+      {
         "id": 0,
-        "name": "Хроники Тель-Авива",
-        "is_paid": false,
-        "likes_num": 23,
-        "dislikes_num": 3,
-        "points": [
-            {
-                "name": "Башня Шалом-Меир",
-                "address": "Тель-Авив-Яффо, Башня Шалом-Меир",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/shalom_meir2.webp",
-                    "images/trial/shalom_meir3.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Башня Шалом-Меир была первым небоскребом в Израиле, символом стремительной модернизации страны."
-            },
-            {
-                "name": "Аллеи Неве-Цедек",
-                "address": "Улица Шабази, Тель-Авив",
-                "location_photo": "images/trial/neve-tsedek.jpg",
-                "photos": [
-                    "images/trial/neve-tsedek2.jpg",
-                    "images/trial/neve-tsedek3.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Прогуляйтесь по Неве-Цедек — одному из старейших районов Тель-Авива, где сейчас расположены художественные галереи и кафе."
-            }
+        "name": "Башня Шалом-Меир",
+        "photos": [
+          "/Users/winazox/PycharmProjects/VolkAround/media/images/shalom_meir2.webp",
+          "/Users/winazox/PycharmProjects/VolkAround/media/images/shalom_meir3.jpg"
+        ],
+        "audio": "/Users/winazox/PycharmProjects/VolkAround/media/audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Башня Шалом-Меир была первым небоскребом в Израиле, символом стремительной модернизации страны.",
+        "link": "",
+        "address": "Тель-Авив-Яффо, Башня Шалом-Меир",
+        "location_photo": "/Users/winazox/PycharmProjects/VolkAround/media/images/Shalom_Meir.jpg",
+        "extra_information_points": [
+          {
+            "id": 3,
+            "name": "Башня Шалом-Меир ДОП",
+            "photos": [
+              "/Users/winazox/PycharmProjects/VolkAround/media/images/shalom_meir2.webp",
+              "/Users/winazox/PycharmProjects/VolkAround/media/images/shalom_meir3.jpg"
+            ],
+            "audio": "/Users/winazox/PycharmProjects/VolkAround/media/audio/Oxxxymiron - Переплетено.mp3",
+            "text": "ДОП____Башня Шалом-Меир была первым небоскребом в Израиле, символом стремительной модернизации страны.",
+            "link": ""
+          }
         ]
-    },
-    {
+      },
+      {
         "id": 1,
-        "name": "Скрытые жемчужины Таунсвилля",
-        "is_paid": true,
-        "likes_num": 8,
-        "dislikes_num": 1,
-        "points": [
-            {
-                "name": "Парк-авеню, Лендмарк",
-                "address": "456 Парк-авеню, Таунсвилль",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Это скрытая жемчужина — любимое место местных жителей, где можно расслабиться и задуматься о вечном."
-            },
-            {
-                "name": "Маяк на мысе",
-                "address": "123 Харбор-стрит, Таунсвилль",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Этот маяк направляет моряков домой уже более века. Насладитесь захватывающим видом на море."
-            }
-        ]
-    },
-    {
-        "id": 2,
-        "name": "Хроники древнего города",
-        "is_paid": true,
-        "likes_num": 22,
-        "dislikes_num": 3,
-        "points": [
-            {
-                "name": "Старый рыночный квартал",
-                "address": "Старый город, Древний город",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/Shalom_Meir.jpg",
-                    "images/trial/Shalom_Meir.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Изучите богатую историю торговли и коммерции, которая восходит к средневековым временам."
-            },
-            {
-                "name": "Фортификационные стены",
-                "address": "Западные ворота, Древний город",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Эти стены крепости когда-то защищали город от захватчиков. Их сохранность — свидетельство стойкости."
-            },
-            {
-                "name": "Башня заката",
-                "address": "Восточные холмы, Древний город",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/Shalom_Meir.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Поднимитесь на Башню заката, чтобы увидеть панорамные виды на город и окружающие холмы."
-            }
-        ]
-    },
-    {
-        "id": 3,
-        "name": "Путь инноваторов",
-        "is_paid": true,
-        "likes_num": 18,
-        "dislikes_num": 0,
-        "points": [
-            {
-                "name": "Центр инноваций",
-                "address": "456 Техно-бульвар, Силиконовая долина",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/Shalom_Meir.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Начните с центра инноваций, где каждый день рождаются революционные идеи."
-            },
-            {
-                "name": "Аллея стартапов",
-                "address": "789 Улица Венчуров, Силиконовая долина",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Пройдитесь по аллее стартапов и узнайте о следующем поколении технологий."
-            },
-            {
-                "name": "Музей технологий",
-                "address": "123 Улица Знаний, Силиконовая долина",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/Shalom_Meir.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Исследуйте прошлое и будущее технологий в легендарном музее технологий."
-            }
-        ]
-    },
-    {
-        "id": 4,
-        "name": "Архитектурные чудеса",
-        "is_paid": false,
-        "likes_num": 11,
-        "dislikes_num": 0,
-        "points": [
-            {
-                "name": "Стеклянный купол",
-                "address": "Центр города, Город будущего",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [
-                    "images/trial/Shalom_Meir.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Шедевр современной инженерии, Стеклянный купол сочетает в себе искусство и функциональность."
-            },
-            {
-                "name": "Подвесной мост",
-                "address": "Набережная, Город будущего",
-                "location_photo": "images/trial/Shalom_Meir.jpg",
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Бросающий вызов гравитации, этот мост — культовый пример архитектурного гения."
-            }
-        ]
-    },
-    {
-        "id": 5,
-        "name": "Мир Оксимирона: Комнаты творчества",
-        "is_paid": true,
-        "likes_num": 25,
-        "dislikes_num": 2,
-        "points": [
-            {
-                "name": "Прихожая: Начало пути",
-                "address": "Дом Оксимирона, Прихожая",
-                "location_photo": null,
-                "photos": [
-                    "images/trial/volk_around.png"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Добро пожаловать в дом творчества Оксимирона! Прихожая символизирует начало пути: первые треки, баттлы и путь к признанию. Здесь звучат эхо юности и первые стихи, которые задали тон его карьеры."
-            },
-            {
-                "name": "Гостиная: Гремит 'Горгород'",
-                "address": "Дом Оксимирона, Гостиная",
-                "location_photo": null,
-                "photos": [
-                    "images/trial/volk_around.png"
-                ],
-                "audio": "audio/Oxxxymiron - Город Под Подошвой.mp3",
-                "text": "В гостиной звучит 'Горгород' — концептуальный альбом, который переносит нас в мрачный мир героев и антигероев. Каждый трек — это рассказ, наполненный аллегориями и отсылками. Вглядываясь в детали, можно почувствовать влияние классической литературы и философии."
-            },
-            {
-                "name": "Кухня: Переплетено",
-                "address": "Дом Оксимирона, Кухня",
-                "location_photo": null,
-                "photos": [
-                    "images/trial/volk_around.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Переплетено.mp3",
-                "text": "Кухня — это сердце дома. Здесь кипит жизнь, смешиваются ингредиенты прошлого, настоящего и будущего. Трек 'Переплетено' звучит как манифест, связывающий поколения и культуры в одно целое."
-            },
-            {
-                "name": "Спальня: Глубокие размышления",
-                "address": "Дом Оксимирона, Спальня",
-                "location_photo": null,
-                "photos": [],
-                "audio": "audio/Oxxxymiron - Где Нас Нет.mp3",
-                "text": "Спальня — место тишины и размышлений. Здесь звучит 'Где нас нет', глубокий трек о поиске себя и места в этом мире. Атмосфера комнаты переносит в пространство мечтаний и вопросов без ответов."
-            },
-            {
-                "name": "Подвал: Темная сторона",
-                "address": "Дом Оксимирона, Подвал",
-                "location_photo": null,
-                "photos": [
-                    "images/trial/volk_around.jpg"
-                ],
-                "audio": null,
-                "text": "Подвал — это темная сторона дома. Здесь рождаются мрачные образы и мысли. Трек 'Тёмный рыцарь' погружает в атмосферу борьбы с внутренними демонами и осознания своих теней."
-            },
-            {
-                "name": "Чердак: Будущее",
-                "address": "Дом Оксимирона, Чердак",
-                "location_photo": null,
-                "photos": [
-                    "images/trial/volk_around.jpg"
-                ],
-                "audio": "audio/Oxxxymiron - Где Нас Нет.mp3",
-                "text": "Чердак — это место, где хранится всё, что вдохновляет на будущее. Здесь играют ещё не выпущенные треки, и зарождаются идеи для нового альбома. Заглядывая в окно, можно увидеть горизонты, куда направлен творческий путь Оксимирона."
-            }
-        ]
-    }
+        "name": "Аллеи Неве-Цедек",
+        "photos": [
+          "/Users/winazox/PycharmProjects/VolkAround/media/images/neve-tsedek2.jpg",
+          "/Users/winazox/PycharmProjects/VolkAround/media/images/neve-tsedek3.jpg"
+        ],
+        "audio": "/Users/winazox/PycharmProjects/VolkAround/media/audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Прогуляйтесь по Неве-Цедек — одному из старейших районов Тель-Авива, где сейчас расположены художественные галереи и кафе.",
+        "link": "",
+        "address": "Улица Шабази, Тель-Авив",
+        "location_photo": "/Users/winazox/PycharmProjects/VolkAround/media/images/neve-tsedek.jpg",
+        "extra_information_points": []
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "name": "Скрытые жемчужины Таунсвилля",
+    "is_paid": true,
+    "likes_num": 8,
+    "dislikes_num": 1,
+    "points": [
+      {
+        "name": "Парк-авеню, Лендмарк",
+        "address": "456 Парк-авеню, Таунсвилль",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Это скрытая жемчужина — любимое место местных жителей, где можно расслабиться и задуматься о вечном.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Маяк на мысе",
+        "address": "123 Харбор-стрит, Таунсвилль",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Этот маяк направляет моряков домой уже более века. Насладитесь захватывающим видом на море.",
+        "extra_information_points": []
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Хроники древнего города",
+    "is_paid": true,
+    "likes_num": 22,
+    "dislikes_num": 3,
+    "points": [
+      {
+        "name": "Старый рыночный квартал",
+        "address": "Старый город, Древний город",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg",
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Изучите богатую историю торговли и коммерции, которая восходит к средневековым временам.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Фортификационные стены",
+        "address": "Западные ворота, Древний город",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Эти стены крепости когда-то защищали город от захватчиков. Их сохранность — свидетельство стойкости.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Башня заката",
+        "address": "Восточные холмы, Древний город",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Поднимитесь на Башню заката, чтобы увидеть панорамные виды на город и окружающие холмы.",
+        "extra_information_points": []
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Путь инноваторов",
+    "is_paid": true,
+    "likes_num": 18,
+    "dislikes_num": 0,
+    "points": [
+      {
+        "name": "Центр инноваций",
+        "address": "456 Техно-бульвар, Силиконовая долина",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Начните с центра инноваций, где каждый день рождаются революционные идеи.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Аллея стартапов",
+        "address": "789 Улица Венчуров, Силиконовая долина",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Пройдитесь по аллее стартапов и узнайте о следующем поколении технологий.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Музей технологий",
+        "address": "123 Улица Знаний, Силиконовая долина",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Исследуйте прошлое и будущее технологий в легендарном музее технологий.",
+        "extra_information_points": []
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Архитектурные чудеса",
+    "is_paid": false,
+    "likes_num": 11,
+    "dislikes_num": 0,
+    "points": [
+      {
+        "name": "Стеклянный купол",
+        "address": "Центр города, Город будущего",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [
+          "images/trial/Shalom_Meir.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Шедевр современной инженерии, Стеклянный купол сочетает в себе искусство и функциональность.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Подвесной мост",
+        "address": "Набережная, Город будущего",
+        "location_photo": "images/trial/Shalom_Meir.jpg",
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Бросающий вызов гравитации, этот мост — культовый пример архитектурного гения.",
+        "extra_information_points": []
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Мир Оксимирона: Комнаты творчества",
+    "is_paid": true,
+    "likes_num": 25,
+    "dislikes_num": 2,
+    "points": [
+      {
+        "name": "Прихожая: Начало пути",
+        "address": "Дом Оксимирона, Прихожая",
+        "location_photo": null,
+        "photos": [
+          "images/trial/volk_around.png"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Добро пожаловать в дом творчества Оксимирона! Прихожая символизирует начало пути: первые треки, баттлы и путь к признанию. Здесь звучат эхо юности и первые стихи, которые задали тон его карьеры.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Гостиная: Гремит 'Горгород'",
+        "address": "Дом Оксимирона, Гостиная",
+        "location_photo": null,
+        "photos": [
+          "images/trial/volk_around.png"
+        ],
+        "audio": "audio/Oxxxymiron - Город Под Подошвой.mp3",
+        "text": "В гостиной звучит 'Горгород' — концептуальный альбом, который переносит нас в мрачный мир героев и антигероев. Каждый трек — это рассказ, наполненный аллегориями и отсылками. Вглядываясь в детали, можно почувствовать влияние классической литературы и философии.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Кухня: Переплетено",
+        "address": "Дом Оксимирона, Кухня",
+        "location_photo": null,
+        "photos": [
+          "images/trial/volk_around.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Переплетено.mp3",
+        "text": "Кухня — это сердце дома. Здесь кипит жизнь, смешиваются ингредиенты прошлого, настоящего и будущего. Трек 'Переплетено' звучит как манифест, связывающий поколения и культуры в одно целое.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Спальня: Глубокие размышления",
+        "address": "Дом Оксимирона, Спальня",
+        "location_photo": null,
+        "photos": [],
+        "audio": "audio/Oxxxymiron - Где Нас Нет.mp3",
+        "text": "Спальня — место тишины и размышлений. Здесь звучит 'Где нас нет', глубокий трек о поиске себя и места в этом мире. Атмосфера комнаты переносит в пространство мечтаний и вопросов без ответов.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Подвал: Темная сторона",
+        "address": "Дом Оксимирона, Подвал",
+        "location_photo": null,
+        "photos": [
+          "images/trial/volk_around.jpg"
+        ],
+        "audio": null,
+        "text": "Подвал — это темная сторона дома. Здесь рождаются мрачные образы и мысли. Трек 'Тёмный рыцарь' погружает в атмосферу борьбы с внутренними демонами и осознания своих теней.",
+        "extra_information_points": []
+      },
+      {
+        "name": "Чердак: Будущее",
+        "address": "Дом Оксимирона, Чердак",
+        "location_photo": null,
+        "photos": [
+          "images/trial/volk_around.jpg"
+        ],
+        "audio": "audio/Oxxxymiron - Где Нас Нет.mp3",
+        "text": "Чердак — это место, где хранится всё, что вдохновляет на будущее. Здесь играют ещё не выпущенные треки, и зарождаются идеи для нового альбома. Заглядывая в окно, можно увидеть горизонты, куда направлен творческий путь Оксимирона.",
+        "extra_information_points": []
+      }
+    ]
+  }
 ]
