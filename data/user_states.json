@@ -2,27 +2,29 @@
     {
         "username": "ivanezox",
         "user_id": 426570954,
-        "mode": "text",
+        "mode": "audio",
         "is_admin": true,
-        "paid_excursions": [
-            "Мир Оксимирона: Комнаты творчества"
-        ],
+        "paid_excursions": [],
         "completed_excursions": [
             "Хроники Тель-Авива",
             "Хроники Тель-Авива",
             "Хроники Тель-Авива",
             "Хроники Тель-Авива",
-            "Хроники Тель-Авива"
+            "Хроники Тель-Авива",
+            "new",
+            "Башня заката",
+            "Тестовая экскурсия",
+            "Название засекречено",
+            "Название засекречено",
+            "Название засекречено"
         ]
     },
     {
         "username": null,
         "user_id": 358504495,
         "mode": "text",
-        "is_admin": false,
-        "paid_excursions": [
-            "Мир Оксимирона: Комнаты творчества"
-        ],
+        "is_admin": true,
+        "paid_excursions": [],
         "completed_excursions": [
             "Хроники Тель-Авива"
         ]
@@ -31,22 +33,24 @@
         "username": "Donnie_Stockman",
         "user_id": 400270228,
         "mode": "audio",
-        "paid_excursions": [
-            "Мир Оксимирона: Комнаты творчества"
-        ],
+        "is_admin": true,
+        "paid_excursions": [],
         "completed_excursions": [
             "Хроники Тель-Авива",
             "Мир Оксимирона: Комнаты творчества",
             "Архитектурные чудеса",
             "Архитектурные чудеса",
-            "Хроники Тель-Авива"
+            "Хроники Тель-Авива",
+            "Хуйня 3.5",
+            "Паша Папаша",
+            "Паша Папаша"
         ]
     },
     {
         "username": "uoqkec",
         "user_id": 5000709590,
         "mode": "text",
-        "is_admin": false,
+        "is_admin": true,
         "paid_excursions": [
             "Мир Оксимирона: Комнаты творчества"
         ],
@@ -56,7 +60,7 @@
         "username": "tkhxonf",
         "user_id": 5449781029,
         "mode": "text",
-        "is_admin": false,
+        "is_admin": true,
         "paid_excursions": [
             "Мир Оксимирона: Комнаты творчества"
         ],

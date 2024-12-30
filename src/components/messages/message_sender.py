@@ -1,4 +1,5 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto, InputMediaAudio
+from telegram.ext import CallbackContext
 
 from src.components.user.user_state import UserState
 from src.constants import *
@@ -6,7 +7,7 @@ from src.components.excursion.point.point import Point
 from src.components.excursion.point.information_part import InformationPart
 
 from src.components.excursion.excursion import Excursion
-from typing import Dict
+from typing import Dict, List
 
 
 class MessageSender:
@@ -72,13 +73,17 @@ class MessageSender:
         await query.answer(f"Вы выбрали {excursion.get_name()}. Начнем наш тур!")
         keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
         if is_admin:
-            keyboard.append([InlineKeyboardButton(EDIT_EXCURSION_BUTTON, callback_data=NEXT_POINT_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(EXCURSION_STATS_BUTTON, callback_data=EXCURSION_STATS_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(EXCURSION_SUMMARY_BUTTON, callback_data=EXCURSION_SUMMARY_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(EDIT_EXCURSION_BUTTON, callback_data=EDIT_EXCURSION_CALLBACK)])
             keyboard.append([InlineKeyboardButton(PUBLISH_EXCURSION_BUTTON,
                                                   callback_data=f"{PUBLISH_CHOSEN_EXCURSION_CALLBACK}"
                                                                 f"{excursion.get_id()}")])
             keyboard.append([InlineKeyboardButton(EDIT_POINTS_BUTTON, callback_data=EDIT_POINTS_CALLBACK)])
             keyboard.append([InlineKeyboardButton(CHANGE_POINTS_ORDER_BUTTON,
                                                   callback_data=CHANGE_POINTS_ORDER_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(DELETE_EXCURSION_BUTTON, callback_data=DELETE_EXCURSION_CALLBACK)])
+        keyboard.append([InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)])
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_text(
             f"Добро пожаловать в {excursion.get_name()}! {STAR_EMOJI}\n\n{EXCURSION_START_MESSAGE}",
@@ -112,6 +117,9 @@ class MessageSender:
     async def send_point_location_info(query, point) -> None:
         """Sends location details (photo, name, address) for the current part."""
         keyboard = [[InlineKeyboardButton(IM_HERE_BUTTON, callback_data=ARRIVED_CALLBACK)]]
+        point_location_link = point.get_location_link()
+        if point_location_link:
+            keyboard.append([InlineKeyboardButton(OPEN_LOCATION_IN_GOOGLE_MAPS, url=point_location_link)])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         if point.get_location_photo():
@@ -135,35 +143,43 @@ class MessageSender:
             )
 
     @staticmethod
-    async def send_part(query, part: InformationPart | Point, mode: str) -> None:
+    async def send_media_group(sender: Update | CallbackQuery, files_paths: List[str] | None, is_photo: bool) -> None:
+        """Sends audio group."""
+        if files_paths and sender:
+            media_group = list()
+            for file_path in files_paths:
+                print(file_path)
+                try:
+                    with open(file_path, "rb") as file:
+                        new_media_element = InputMediaPhoto(file) if is_photo else InputMediaAudio(file)
+                        media_group.append(
+                            new_media_element
+                        )
+                except FileNotFoundError:
+                    await sender.message.reply_text(f"Media not found: {new_media_element}")
+                    return
+
+            if media_group:
+                await sender.message.reply_media_group(media_group)
+
+    @staticmethod
+    async def send_part(query: CallbackQuery, part: InformationPart | Point, mode: str) -> None:
         """Sends the current part (introduction, middle, or conclusion) of a part."""
         photos = part.get_photos()  # Assumes this returns a list of photo file paths
         media_group = []
 
-        if photos:
-            for photo_path in photos:
-                try:
-                    with open(photo_path, "rb") as photo:
-                        media_group.append(
-                            InputMediaPhoto(photo)
-                        )
-                except FileNotFoundError:
-                    await query.message.reply_text(f"Photo not found: {photo_path}")
-                    return
-
-            if media_group:
-                await query.message.reply_media_group(media_group)
+        await MessageSender.send_media_group(query, part.get_photos(), is_photo=True)
         if mode == AUDIO_MODE:
-            audio_file = part.get_audio()
-            if audio_file:
-                with open(audio_file, "rb") as audio:
-                    await query.message.reply_audio(audio=audio)
-                    if part.get_link():
-                        await query.message.reply_text(part.get_link())
-            await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
+            audio_files = part.get_audio()
+            try:
+                await MessageSender.send_media_group(query, audio_files, is_photo=False)
+                if part.get_link():
+                    await query.message.reply_text(part.get_link())
+            except Exception as e:
+                await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
         text_content = part.get_text()
         if part.get_link():
-            text_content = f"{text_content}\n{part.get_link()}"
+            text_content = f"{text_content}\n{LINK_EMOJI} {part.get_link()}"
         await query.message.reply_text(text_content)
 
     @staticmethod

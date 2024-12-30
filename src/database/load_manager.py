@@ -24,44 +24,58 @@ class LoadManager:
 
         for excursion_data in data:  # Iterate through each current_excursion in the JSON
             excursion_id = excursion_data["id"]
+            if excursion_id > Excursion.excursion_id:
+                Excursion.excursion_id = excursion_id
             excursion_name = excursion_data.get("name", DEFAULT_EXCURSION_NAME)
             is_paid_excursion = excursion_data.get("is_paid", False)
             is_draft_excursion = excursion_data.get("is_draft", False)
             likes_num = excursion_data.get("likes_num", 0)
             dislikes_num = excursion_data.get("dislikes_num", 0)
             points_data = excursion_data.get("points", [])
+            visitors_data = excursion_data.get("visitors_num", 0)
             points = []
 
             for point_data in points_data:  # Iterate through each part in the current_excursion
                 extra_parts = list()
                 if point_data.get("extra_information_points", False):
-                    print(point_data.get("extra_information_points", False))
                     for extra_part in point_data["extra_information_points"]:
-                        print(extra_part)
                         info_part = InformationPart(id=extra_part.get("id", 0),
                                                     part_name=extra_part.get("name", DEFAULT_INFORMATION_PART_NAME),
                                                     photos=extra_part.get("photos", []),
-                                                    audio=extra_part.get("audio", None),
-                                                    text=extra_part.get("text", DEFAULT_TEXT)
+                                                    audio=extra_part.get("audio", []),
+                                                    text=extra_part.get("text", DEFAULT_TEXT),
+                                                    link=point_data.get("link", None),
+                                                    visitors_num=point_data.get("visitors_num", 0),
+                                                    likes_num=point_data.get("likes_num", 0),
+                                                    dislikes_num=point_data.get("dislikes_num", 0),
                                                     )
+                        if info_part.get_id() > InformationPart.information_part_id:
+                            InformationPart.information_part_id = info_part.get_id()
                         extra_parts.append(info_part)
 
                 point = Point(
                     id=point_data.get("id", 0),
                     part_name=point_data.get("name", DEFAULT_EXCURSION_NAME),
                     address=point_data.get("address", DEFAULT_ADDRESS),
-                    location_photo=point_data.get("location_photo"),
+                    location_photo=point_data.get("location_photo", None),
+                    location_link=point_data.get("location_link", None),
                     photos=point_data.get("photos", []),
-                    audio=point_data.get("audio", None),
+                    audio=point_data.get("audio", []),
                     text=point_data.get("text", DEFAULT_TEXT),
+                    link=point_data.get("link", None),
+                    visitors_num=point_data.get("visitors_num", 0),
+                    likes_num=point_data.get("likes_num", 0),
+                    dislikes_num=point_data.get("dislikes_num", 0),
                     extra_information_points=extra_parts,
                 )
+                if point.get_id() > Point.point_id:
+                    Point.point_id = point.get_id()
                 points.append(point)
 
             # Create the Excursion object and add it to the excursions list
             excursion = Excursion(excursion_id=excursion_id, name=excursion_name, points=points,
                                   is_paid=is_paid_excursion, likes_num=likes_num,
-                                  dislikes_num=dislikes_num, is_draft=is_draft_excursion)
+                                  dislikes_num=dislikes_num, is_draft=is_draft_excursion, visitors_num=visitors_data)
             excursions[excursion_name] = excursion
         print("Loaded {} excursions".format(len(excursions)))
 
@@ -78,7 +92,6 @@ class LoadManager:
             print("Loading user states...")
 
             with open(USER_STATES_PATH, "r") as file:
-                print("File opened")
                 data = json.load(file)
                 print(data)
                 for user in data:
@@ -91,7 +104,6 @@ class LoadManager:
                                                      paid_excursions=user.get("paid_excursions", []),
                                                      completed_excursions=user.get("completed_excursions", []))
                     user_states[user["user_id"]] = user_states_instance
-                    print(f"Loaded user: {user_states_instance.to_dict()}")
                 print("Loaded {} users".format(len(user_states)))
                 return user_states
         except FileNotFoundError:
@@ -167,3 +179,24 @@ class LoadManager:
 
         except Exception as e:
             print(f"Error saving user state: {e}")
+
+    @staticmethod
+    def delete_excursion_data(excursion_id: int) -> None:
+        """Deletes a components' information in the JSON file."""
+        try:
+            if not os.path.exists(EXCURSIONS_INFO_PATH):
+                return
+            with open(EXCURSIONS_INFO_PATH, 'r') as file:
+                data = json.load(file)
+
+            # Example: Delete an instance with a specific key (e.g., a person with a specific 'id')
+            data = [item for item in data if item.get('id') != excursion_id]
+
+            # Write the updated data back to the JSON file
+            with open(EXCURSIONS_INFO_PATH, 'w') as file:
+                json.dump(data, file, indent=4)
+
+            print(f"Instance with id {excursion_id} deleted.")
+
+        except Exception as e:
+            print(f"Error deleting excursion {excursion_id} data: {e}")

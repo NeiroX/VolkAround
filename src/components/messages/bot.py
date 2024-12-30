@@ -1,5 +1,7 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, ConversationHandler, filters, \
+from typing import List
+
+from telegram import Update, InlineKeyboardButton
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, filters, \
     MessageHandler
 
 from src.components.excursion.point.information_part import InformationPart
@@ -15,9 +17,8 @@ from src.constants import *
 def get_user_id_by_update(update: Update) -> int:
     return update.callback_query.from_user.id if update.callback_query else update.message.from_user.id
 
-# TODO: Fix saving
-# TODO: Add editing and adding extra information points
-# TODO: Add order change
+
+# TODO: Finish menu transitions
 
 class Bot:
     """The main bot class coordinating everything."""
@@ -57,6 +58,7 @@ class Bot:
         user_state = self.get_user_state(user_id)
         user_state.reset_current_excursion()
         user_state.user_editor.disable_editing_mode()
+        user_state.user_editor.disable_order_changing()
         await MessageSender.delete_previous_buttons(query)
         print(f"Sending excursions list for user {user_state.username}")
         print(f"Available excursions: {list(self.excursions.keys())}")
@@ -139,7 +141,7 @@ class Bot:
         user_state = self.get_user_state(user_id)
 
         point = user_state.get_point()  # Get the current part information
-
+        point.increase_visitors_num()
         # Check if the user is in text or audio mode
         await MessageSender.send_part(query, point, user_state.mode)
 
@@ -165,7 +167,6 @@ class Bot:
     async def handle_extra_part(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the 'Extra Part' button press."""
         query = update.callback_query
-
         user_id = query.from_user.id
         user_state = self.get_user_state(user_id)
         current_point = user_state.get_point()
@@ -179,6 +180,7 @@ class Bot:
         if extra_part_id >= len(extra_parts):
             await MessageSender.send_error_message(query, EXTRA_PART_DOES_NOT_EXISTS_ERROR, is_alert=False)
         else:
+            extra_parts[extra_part_id].increase_visitors_num()
             await MessageSender.send_part(query, extra_parts[extra_part_id], user_state.mode)
             await MessageSender.send_move_on_request(query, current_point)
 
@@ -207,6 +209,9 @@ class Bot:
         # Notify user of completion
         excursion_name = user_state.get_current_excursion().get_name()
         user_state.add_completed_excursion(user_state.get_current_excursion())
+        current_excursion = user_state.get_current_excursion()
+        current_excursion.increase_visitors_num()
+        LoadManager.save_excursion_data(current_excursion)
         LoadManager.save_user_state(user_state)
         await query.message.reply_text(
             f"Поздравляю! Вы завершили {excursion_name}! {CONGRATULATIONS_EMOJI}")
@@ -225,9 +230,9 @@ class Bot:
 
         # Handle button presses
         if query.data == FEEDBACK_POSITIVE_CALLBACK:
-            user_state.get_current_excursion().like()
+            user_state.get_current_excursion().increase_likes_num()
         else:
-            user_state.get_current_excursion().dislike()
+            user_state.get_current_excursion().increase_dislikes_num()
         # Save updated info
         LoadManager.save_excursion_data(user_state.get_current_excursion())
         await MessageSender.send_feedback_response(query)
@@ -245,18 +250,16 @@ class Bot:
             if excursion_id == excursion.get_id():
                 excursion.change_visibility()
                 break
-        await AdminMessageSender.send_success_message(query)
+        await AdminMessageSender.send_success_message(update)
 
     async def add_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         query = update.callback_query
         user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
         await MessageSender.delete_previous_buttons(query)
-        new_id = 0
-        if self.excursions:
-            for excursion_name, excursion in self.excursions.items():
-                if excursion.get_id() > new_id:
-                    new_id = excursion.get_id()
+        Excursion.excursion_id += 1
+        new_id = Excursion.excursion_id
+
         new_excursion = Excursion(new_id)
         user_state.user_editor.enable_editing_mode(new_excursion)
         await self.handle_next_field(update, context)
@@ -265,41 +268,68 @@ class Bot:
         query = update.callback_query
         user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
         await MessageSender.delete_previous_buttons(query)
-        new_id = 0
-        if self.excursions:
-            for excursion in self.excursions.values():
-                for point in excursion.get_points():
-                    if point.get_id() > new_id:
-                        new_id = point.get_id()
-        new_point = Point(new_id + 1)
-        user_state.user_editor.enable_editing_mode(new_point)
+        Point.point_id += 1
+        new_point = Point(Point.point_id)
+        user_state.user_editor.enable_editing_mode(new_point, return_callback=ADD_POINT_CALLBACK,
+                                                   return_message=ADD_POINT_BUTTON,
+                                                   return_to_previous_menu_callback=EDIT_POINTS_CALLBACK,
+                                                   return_to_previous_menu_message=EDIT_POINTS_BUTTON)
+        await self.handle_next_field(update, context)
+
+    async def add_extra_information_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        query = update.callback_query
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        point_id = int(query.data.split("_")[-1])
+        await MessageSender.delete_previous_buttons(query)
+        InformationPart.information_part_id += 1
+        new_information_part = InformationPart(InformationPart.information_part_id)
+        user_state.user_editor.enable_editing_mode(new_information_part, point_id=point_id,
+                                                   return_callback=ADD_EXTRA_POINT_CALLBACK,
+                                                   return_message=ADD_EXTRA_POINT_BUTTON,
+                                                   return_to_previous_menu_callback=EDIT_POINT_CALLBACK,
+                                                   return_to_previous_menu_message=EDIT_POINT_BUTTON
+                                                   )
         await self.handle_next_field(update, context)
 
     def save_editing_item(self, update: Update):
         user_id = get_user_id_by_update(update)
         user_state = self.get_user_state(user_id=user_id)
-        excursion_to_save = None
         if not user_state.user_editor.get_editing_mode():
             return  # Exit if not in editing mode
+        excursion_to_save = None
         editing_item = user_state.user_editor.get_editing_item()
         if editing_item.__class__ == Excursion:
             excursion_to_save = editing_item
-            for excursion in self.excursions.values():
+            for excursion_name, excursion in self.excursions.items():
                 if excursion.get_id() == editing_item.get_id():
+                    del self.excursions[excursion_name]
                     self.excursions[editing_item.get_name()] = editing_item
                     break
             else:
                 self.excursions[editing_item.get_name()] = editing_item
         else:
+            print("Jumped to points saving")
             excursion_to_save = user_state.get_current_excursion()
             if editing_item.__class__ == Point:
                 excursion_to_save.update_excursions_points(editing_item)
             elif editing_item.__class__ == InformationPart:
+                print("Jumped to information_part saving")
                 current_point_id = user_state.user_editor.get_point_id()
                 for point in excursion_to_save.get_points():
+                    print(point.get_id(), current_point_id, type(current_point_id))
                     if point.get_id() == current_point_id:
+                        print("Found point")
                         point.update_extra_information_points(editing_item)
+                        print("Updated extra points")
+            self.excursions[excursion_to_save.get_name()] = excursion_to_save
         LoadManager.save_excursion_data(excursion_to_save)
+
+    async def handle_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.message.from_user.id)
+        if user_state.user_editor.get_editing_mode() and user_state.user_editor.get_current_field_type() == str:
+            await self.handle_next_field(update, context)
+        elif user_state.user_editor.get_order_changing():
+            await self.handle_order_changing(update, context)
 
     async def handle_next_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the current field and moves to the next one."""
@@ -308,52 +338,74 @@ class Bot:
 
         if not user_state.user_editor.get_editing_mode():
             return  # Exit if not in editing mode
-
         # Handle the input for the current field
+        print(user_state.user_editor.current_field_counter)
         if user_state.user_editor.is_counting_started() and not (
-                update.callback_query and update.callback_query.data == SKIP_FIELD_CALLBACK):
+                update.callback_query and update.callback_query.data in {SKIP_FIELD_CALLBACK,
+                                                                         DISABLE_SENDING_FILES_CALLBACK}):
             field_type = user_state.user_editor.get_current_field_type()
-            self.handle_input(update, field_type)
+            await self.handle_input(update, field_type, context)
+
+        if update.callback_query and (update.callback_query.data in [SKIP_FIELD_CALLBACK,
+                                                                     DISABLE_SENDING_FILES_CALLBACK]
+                                      and user_state.user_editor.get_current_field_type() in [
+                                          AUDIO_TYPE, PHOTO_TYPE]):
+            user_state.user_editor.disable_files_sending()
+            files_buffer = user_state.user_editor.get_files_buffer()
+            if update.callback_query.data == DISABLE_SENDING_FILES_CALLBACK:
+                user_state.user_editor.add_editing_result(files_buffer)
+            user_state.user_editor.clear_files_buffer()
+        elif user_state.user_editor.get_files_sending_mode():
+            return
 
         # Move to the next field
         user_state.user_editor.increase_field_counter()
         if user_state.user_editor.is_form_finished():
             # All fields are processed; finalize
             user_state.user_editor.set_editing_result_to_item()
-            await AdminMessageSender.send_success_message(update.callback_query)
+
+            return_button = user_state.user_editor.get_return_button()
+            previous_menu_button = user_state.user_editor.get_previous_menu_button()
+
+            await AdminMessageSender.send_success_message(update, return_button=return_button,
+                                                          previous_menu_button=previous_menu_button)
+            self.save_editing_item(update)
             user_state.user_editor.disable_editing_mode()
             return
 
         # Process next field message
         field_type = user_state.user_editor.get_current_field_type()
         field_message = user_state.user_editor.get_current_field_message()
-        if field_type == PHOTO_TYPE:
-            await AdminMessageSender.send_form_text_field_message_query(update.callback_query,
-                                                                        field_message, None)
+        if field_type == PHOTO_TYPE or field_type == ONE_PHOTO_TYPE:
+            if field_type == PHOTO_TYPE:
+                user_state.user_editor.enable_files_sending()
+            current_state = user_state.user_editor.get_current_field_state()
+            photos = current_state if user_state.user_editor.get_current_field_state() else []
+            print("Sending message to get photos from query")
+            await AdminMessageSender.send_form_photo_field_message(update, field_message,
+                                                                   f"{len(photos)} фото",
+                                                                   photos, one_photo=(field_type == ONE_PHOTO_TYPE))
 
         elif field_type == AUDIO_TYPE:
-            await AdminMessageSender.send_form_text_field_message_query(update.callback_query,
-                                                                        field_message, None)
+            user_state.user_editor.enable_files_sending()
+            current_audio = user_state.user_editor.get_current_field_state()
+            current_state_message = "Текущий аудио файл" if current_audio else "Нет текущего аудио файла"
+            print("Sending message to get photos from query")
+            await AdminMessageSender.send_form_audio_field_message(update, field_message,
+                                                                   current_state_message,
+                                                                   current_audio)
 
         elif field_type == str:
             current_state = user_state.user_editor.get_current_field_state()
-
-            if update.callback_query:
-                await AdminMessageSender.send_form_text_field_message_query(update.callback_query, field_message,
-                                                                            current_state)
-            elif update.message:
-                await AdminMessageSender.send_form_text_field_message_update(update, field_message, )
+            await AdminMessageSender.send_form_text_field_message(update, field_message,
+                                                                  current_state)
         elif field_type == bool:
             print("Handling boolean field")
             current_state = user_state.user_editor.get_current_field_state()
-            if update.callback_query:
-                await AdminMessageSender.send_form_boolean_field_message_query(update.callback_query, field_message,
-                                                                               "Да" if current_state else "Нет")
-            elif update.message:
-                await AdminMessageSender.send_form_boolean_field_message_update(update, field_message,
-                                                                                "Да" if current_state else "Нет")
+            await AdminMessageSender.send_form_boolean_field_message(update, field_message,
+                                                                     "Да" if current_state else "Нет")
 
-    def handle_input(self, update: Update, field_type):
+    async def handle_input(self, update: Update, field_type, context: ContextTypes.DEFAULT_TYPE):
 
         user_id = get_user_id_by_update(update)
         user_state = self.get_user_state(user_id=user_id)
@@ -363,15 +415,90 @@ class Bot:
                 self.handle_text_field_input(update)
             elif field_type == bool:
                 self.handle_boolean_field_input(update)
+            elif field_type == PHOTO_TYPE or field_type == ONE_PHOTO_TYPE:
+                await self.handle_photo_field_input(update, context, True if field_type == ONE_PHOTO_TYPE else False)
+            elif field_type == AUDIO_TYPE:
+                await self.handle_audio_field_input(update, context)
 
     def handle_text_field_input(self, update: Update):
         user_state = self.get_user_state(user_id=update.message.from_user.id)
         if user_state.user_editor.get_editing_mode():
             print("Handling text field input")
-            # TODO: change to dict and add constants
             field_type = user_state.user_editor.get_current_field_type()
             if field_type == str:
                 user_state.user_editor.add_editing_result(update.message.text)
+
+    async def handle_audio_field_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # Fetch the user's state
+        user_state = self.get_user_state(user_id=update.message.from_user.id)
+
+        # Check if the user is in editing mode and editing the correct field
+        if user_state.user_editor.get_editing_mode():
+            field_type = user_state.user_editor.get_current_field_type()
+            if field_type == AUDIO_TYPE:
+                # Ensure the directory exists
+                os.makedirs(AUDIO_PATH, exist_ok=True)
+
+                try:
+                    # Determine if this is a media group or a single audio message
+
+                    if not update.message.audio:
+                        raise ValueError("No audio files found in the message.")
+                    # Process and save each audio file
+                    # Get the file from Telegram servers
+                    audio = update.message.audio
+                    file = await context.bot.get_file(audio.file_id)
+
+                    # Create a unique file name using the file's unique ID
+                    file_name = f"{audio.file_unique_id}_{audio.file_name}"
+                    file_path = os.path.join(AUDIO_PATH, file_name)
+
+                    # Download the file to the specified location
+                    await file.download_to_drive(file_path)
+                    print(f"Audio file saved to {file_path}")
+
+                    # Save the file path in the user's editing result
+                    user_state.user_editor.add_file_to_files_buffer(file_path)
+
+                except Exception as e:
+                    print(f"Failed to handle audio: {e}")
+                    await update.message.reply_text("Ошибка загрузки файлов.")
+
+    async def handle_photo_field_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                                       one_photo: bool = False):
+        user_state = self.get_user_state(user_id=update.message.from_user.id)
+        if user_state.user_editor.get_editing_mode():
+            print("Handling photo field input")
+            field_type = user_state.user_editor.get_current_field_type()
+            if field_type == PHOTO_TYPE or field_type == ONE_PHOTO_TYPE:
+                # Ensure the directory exists
+                os.makedirs(IMAGES_PATH, exist_ok=True)
+
+                print(update.message.photo)
+
+                try:
+                    # Fetch the file object
+                    photo = update.message.photo[-1]
+                    file = await context.bot.get_file(photo.file_id)
+
+                    # Create a unique file name
+                    file_name = f"{photo.file_unique_id}.jpg"  # Use `file_unique_id` for uniqueness
+                    file_path = os.path.join(IMAGES_PATH, file_name)
+
+                    # Download the file to the specified location
+                    await file.download_to_drive(file_path)
+                    print(f"Photo saved to {file_path}")
+
+                    # Append file path to the list of saved files
+
+                    # Update the editing result
+                    if not one_photo:
+                        user_state.user_editor.add_file_to_files_buffer(file_path)
+                    else:
+                        user_state.user_editor.add_editing_result(file_path)
+                except Exception as e:
+                    print(f"Failed to handle photos: {e}")
+                    await update.message.reply_text("An error occurred while processing the photos.")
 
     def handle_boolean_field_input(self, update: Update):
         user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
@@ -399,6 +526,8 @@ class Bot:
 
     async def edit_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        current_excursion = user_state.get_current_excursion()
+        print(current_excursion.get_name())
         await MessageSender.delete_previous_buttons(update.callback_query)
         user_state.user_editor.enable_editing_mode(user_state.get_current_excursion())
         await self.handle_next_field(update, context)
@@ -412,6 +541,175 @@ class Bot:
                 user_state.user_editor.enable_editing_mode(point, point_id=point_id)
                 await self.handle_next_field(update, context)
                 return
+
+    async def delete_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        point_id = int(update.callback_query.data.split("_")[-1])
+        current_excursion = user_state.get_current_excursion()
+        for point in current_excursion.get_points():
+            if point.get_id() == point_id:
+                files_to_delete = list()
+                points_photos = point.get_photos()
+                if points_photos: files_to_delete.extend(points_photos)
+                point_location_photo = point.get_location_photo()
+                if point_location_photo: files_to_delete.append(point_location_photo)
+                point_audio = point.get_audio()
+                if point_audio: files_to_delete.extend(point_audio)
+                for extra_point in point.get_extra_information_points():
+                    extra_point_photos = extra_point.get_photos()
+                    if extra_point_photos: files_to_delete.extend(extra_point_photos)
+                    extra_point_audio = extra_point.get_audio()
+                    if extra_point_audio: files_to_delete.extend(extra_point_audio)
+                self.delete_files(files_to_delete)
+                current_excursion.points.remove(point)
+                LoadManager.save_excursion_data(current_excursion)
+                previous_menu_button = InlineKeyboardButton(EDIT_POINTS_BUTTON,
+                                                            callback_data=f"{EDIT_POINTS_CALLBACK}")
+                await AdminMessageSender.send_success_message(update)
+                return
+
+    async def delete_extra_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        data_parts = update.callback_query.data.split("_")
+        if len(data_parts) >= 2:
+            point_id = int(data_parts[-2])
+            extra_point_id = int(data_parts[-1])
+        else:
+            raise ValueError("Invalid callback query data format.")
+        current_excursion = user_state.get_current_excursion()
+        for point in current_excursion.get_points():
+            if point.get_id() == point_id:
+                for extra_point in point.get_extra_information_points():
+                    if extra_point.get_id() == extra_point_id:
+                        files_to_delete = list()
+                        extra_point_photos = extra_point.get_photos()
+                        if extra_point_photos: files_to_delete.extend(extra_point_photos)
+                        extra_point_audio = extra_point.get_audio()
+                        if extra_point_audio: files_to_delete.extend(extra_point_audio)
+                        self.delete_files(files_to_delete)
+                        point.extra_information_points.remove(extra_point)
+                        LoadManager.save_excursion_data(current_excursion)
+                        # Return button
+                        previous_menu_button = InlineKeyboardButton(EDIT_POINT_BUTTON,
+                                                                    callback_data=f"{EDIT_POINT_CALLBACK}{point_id}")
+                        await AdminMessageSender.send_success_message(update, previous_menu_button=previous_menu_button)
+                        return
+
+    async def edit_extra_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
+        point_id = int(point_id)
+        extra_point_id = int(extra_point_id)
+        for point in user_state.get_current_excursion().get_points():
+            if point.get_id() == point_id:
+                for extra_point in point.get_extra_information_points():
+                    if extra_point.get_id() == extra_point_id:
+                        await AdminMessageSender.send_point_edit_message(update.callback_query, extra_point,
+                                                                         True, point_id)
+                        return
+
+    async def edit_extra_point_fields(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
+        point_id = int(point_id)
+        extra_point_id = int(extra_point_id)
+        current_excursion = user_state.get_current_excursion()
+        for point in current_excursion.get_points():
+            if point.get_id() == point_id:
+                for extra_point in point.get_extra_information_points():
+                    if extra_point.get_id() == extra_point_id:
+                        user_state.user_editor.enable_editing_mode(extra_point, point_id=point_id,
+                                                                   extra_information_point_id=extra_point_id)
+                        await self.handle_next_field(update, context)
+                        return
+
+    async def send_excursion_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        current_excursion = user_state.get_current_excursion()
+        await AdminMessageSender.send_excursion_stats(update, current_excursion)
+
+    async def send_excursion_summary(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        current_excursion = user_state.get_current_excursion()
+        await AdminMessageSender.send_excursion_summary_message(update, current_excursion)
+
+    async def change_points_order(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        current_excursion = user_state.get_current_excursion()
+        current_state = list(
+            map(lambda x: f"{x[0]}. {x[1].get_name()}", enumerate(current_excursion.get_points(), start=1)))
+        current_state_message = "\n".join(current_state)
+        user_state.user_editor.enable_order_changing()
+        await AdminMessageSender.send_form_text_field_message(update, CHANGING_ORDER_MESSAGE,
+                                                              current_state_message, skip_button=False)
+
+    async def handle_order_changing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.message.from_user.id)
+        if user_state.user_editor.get_order_changing():
+            print("Changing order")
+            try:
+                points_number = len(user_state.get_current_excursion().get_points())
+                print("Points number: " + str(points_number))
+                new_points_order = [int(point.strip()) for point in update.message.text.split(',')]
+                print("New points order: ", new_points_order)
+                for point_index in new_points_order:
+                    if point_index < 0 or point_index > points_number:
+                        raise IndexError
+                old_points_order = {index: point for index, point in
+                                    enumerate(user_state.get_current_excursion().get_points(), start=1)}
+                current_excursion = user_state.get_current_excursion()
+                current_excursion.points = [old_points_order[new_index] for new_index in new_points_order]
+                LoadManager.save_excursion_data(current_excursion)
+
+                # Return button
+                await AdminMessageSender.send_success_message(update)
+            except Exception as e:
+                print(f"Failed to handle order changing: {e}")
+                await update.message.reply_text(WRONG_FORMAT_MESSAGE)
+            except IndexError as e:
+                print(f"Failed to handle order changing: {e}")
+                await update.message.reply_text("Неправильный индекс, попробуйте еще раз")
+
+    async def delete_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
+        await MessageSender.delete_previous_buttons(update.callback_query)
+        current_excursion = user_state.get_current_excursion()
+        files_to_delete = list()
+        for point in current_excursion.get_points():
+            points_photos = point.get_photos()
+            if points_photos: files_to_delete.extend(points_photos)
+            point_location_photo = point.get_location_photo()
+            if point_location_photo: files_to_delete.append(point_location_photo)
+            point_audio = point.get_audio()
+            if point_audio: files_to_delete.extend(point_audio)
+            for extra_point in point.get_extra_information_points():
+                extra_point_photos = extra_point.get_photos()
+                if extra_point_photos: files_to_delete.extend(extra_point_photos)
+                extra_point_audio = extra_point.get_audio()
+                if extra_point_audio: files_to_delete.extend(extra_point_audio)
+
+        self.delete_files(files_to_delete)
+        del self.excursions[current_excursion.get_name()]
+        LoadManager.delete_excursion_data(current_excursion.excursion_id)
+        await AdminMessageSender.send_success_message(update)
+
+    @staticmethod
+    def delete_files(files: List[str]):
+        for file_path in files:
+            if file_path is None:
+                continue
+            try:
+                os.remove(file_path)  # Delete the file
+                print(f"Deleted: {file_path}")
+            except Exception as e:
+                print(f"Error deleting {file_path}: {e}")
 
     @staticmethod
     async def move_to_excursions_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -445,12 +743,36 @@ class Bot:
         self.application.add_handler(CallbackQueryHandler(self.handle_next_field, pattern=f"^{SKIP_FIELD_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self.handle_next_field, pattern=f"^{BOOLEAN_FIELD_CALLBACK}"))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_next_field))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_messages))
+        self.application.add_handler(MessageHandler(filters.PHOTO & ~filters.AUDIO, self.handle_next_field))
+        self.application.add_handler(MessageHandler(filters.AUDIO & ~filters.PHOTO, self.handle_next_field))
+
         self.application.add_handler(CallbackQueryHandler(self.add_point, pattern=f"^{ADD_POINT_CALLBACK}$"))
         self.application.add_handler(CallbackQueryHandler(self.edit_excursion, pattern=f"^{EDIT_EXCURSION_CALLBACK}"))
         self.application.add_handler(CallbackQueryHandler(self.edit_points, pattern=f"^{EDIT_POINTS_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self.edit_point_fields, pattern=f"^{EDIT_POINT_FIELDS_CALLBACK}"))
         self.application.add_handler(CallbackQueryHandler(self.edit_point, pattern=f"^{EDIT_POINT_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.add_extra_information_point, pattern=f"^{ADD_EXTRA_POINT_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.delete_point, pattern=f"^{DELETE_POINT_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.delete_extra_point, pattern=f"^{DELETE_EXTRA_POINT_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.edit_extra_point, pattern=f"^{EDIT_EXTRA_POINT_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.edit_extra_point_fields, pattern=f"^{EDIT_EXTRA_POINT_FIELDS_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.send_excursion_stats, pattern=f"^{EXCURSION_STATS_CALLBACK}$"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.send_excursion_summary, pattern=f"^{EXCURSION_SUMMARY_CALLBACK}$"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.change_points_order, pattern=f"^{CHANGE_POINTS_ORDER_CALLBACK}$"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.delete_excursion, pattern=f"^{DELETE_EXCURSION_CALLBACK}"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.handle_next_field, pattern=f"^{DISABLE_SENDING_FILES_CALLBACK}$"))
+        # self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_order_changing))
 
         self.application.run_polling()

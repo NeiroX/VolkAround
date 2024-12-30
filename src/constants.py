@@ -39,6 +39,29 @@ SYNC_EMOJI = "\U0001F504"  # 🔄
 PLUS_EMOJI = "\u2795"  # ➕
 DRAFT_EMOJI = '\U0001F4DD'  # 📝
 PUBLISHED_EMOJI = '\U0001F7E2'  # 🟢
+EDITING_EMOJI = "\u270F\uFE0F"  # 🖊️ (Pencil for editing)
+SKIP_EMOJI = "\u23E9"  # ⏩ (Fast-forward)
+CHANGE_ORDER_EMOTIONS = "\U0001F522"  # 🔢 (Input Numbers)
+PERSON_EMOJI = "\U0001F464"  # 👤 (Bust in Silhouette)
+DELETE_EMOJI = '\U0001F5D1'  # 🗑️
+AUTHOR_EMOJI = '\U0001F47D'  # 👽
+STATS_EMOJI = '\U0001F4C8'
+SUMMARY_EMOJI = '\U0001F4D6'
+SUB_THEME_EMOJI = '\U0001F9E9'  # 🧩
+FOLDER_EMOJI = '\U0001F4C1'  # 📁
+NUMBER_0_EMOJI = '\U00000030\U000020E3'  # 0️⃣
+NUMBER_1_EMOJI = '\U00000031\U000020E3'  # 1️⃣
+NUMBER_2_EMOJI = '\U00000032\U000020E3'  # 2️⃣
+NUMBER_3_EMOJI = '\U00000033\U000020E3'  # 3️⃣
+NUMBER_4_EMOJI = '\U00000034\U000020E3'  # 4️⃣
+MAP_EMOJI = '\U0001F5FA'  # 🗺️
+LINK_EMOJI = "\U0001F517"  # 🔗
+PHOTO_EMOJI = "\U0001F4F8"  # 📸
+AUDIO_EMOJI = "\U0001F3A7"  # 🎧
+TEXT_EMOJI = "\U0001F4AC"  # 💬
+QUESTION_EMOJI = "\U00002753"  # ❓
+CURRENT_STATE_EMOJI = "\U000026F3"  # ⛳
+FINISH_EMOJI = "\U0001F3C1"  # 🏁
 
 # Paths
 USER_STATES_PATH = os.path.abspath("data/user_states.json")
@@ -77,7 +100,7 @@ WELCOME_MESSAGE = (
 )
 INTRO_ACCESS_MESSAGE = (
     f"{FOLDED_HANDS_EMOJI}{MONEY_BAG_EMOJI}Вы можете насладиться бесплатными пробными экскурсиями"
-    f" или приобрести другие просто нажам на них."
+    f" или приобрести другие просто нажав на них."
 )
 EXCURSION_START_MESSAGE = f"Приготовьтесь к увлекательному путешествию! {STAR_EMOJI}{STOPWATCH_EMOJI}"
 MOVE_ON_REQUEST_MESSAGE = f"Вы закончили осматривать эту локацию? Переходим дальше? {LOCATION_PIN_EMOJI}"
@@ -99,11 +122,15 @@ FEEDBACK_CONGRATS_MESSAGE = (
 
 EXCURSIONS_LIST_MESSAGE = f"Вот список доступных экскурсий. Выбирайте любую и вперед! {LOCATION_PIN_EMOJI}"
 
-CHOOSE_EXCURSION_TO_PUBLISH_MESSAGE = "Выберите из списка экскурсию, которую вы хотите опубликовать/скрыть:"
-ACTION_COMPLETED_SUCCESFULLY_MESSAGE = f"Действие успешно выполнено {CONGRATULATIONS_EMOJI}"
-CURRENT_FIELD_VALUE = "Текущее значение:"
-EDIT_POINTS_MESSAGE = "Выберите точку для редактирования или добавьте новую:"
-EDIT_POINT_MESSAGE = "Вы редактируете точку: "
+ACTION_COMPLETED_SUCCESSFULLY_MESSAGE = f"Действие успешно выполнено {CONGRATULATIONS_EMOJI}"
+CURRENT_FIELD_VALUE = f"{CURRENT_STATE_EMOJI} Текущее значение:"
+EDIT_POINTS_MESSAGE = f"{FOLDER_EMOJI}{LOCATION_PIN_EMOJI} Выберите точку для редактирования или добавьте новую:"
+EDIT_POINT_MESSAGE = f"{FOLDER_EMOJI}{LOCATION_PIN_EMOJI} Вы редактируете точку: "
+EDIT_EXTRA_POINT_MESSAGE = f"{FOLDER_EMOJI}{SUB_THEME_EMOJI} Вы редактируете подтему: "
+CHANGING_ORDER_MESSAGE = ("Вы редактируете порядок точек в экскурсии.\nПожалуйста, введите номера точек через запятую"
+                          " и отправьте сообщение\n"
+                          "Пример: 1, 4, 5, 6")
+WRONG_FORMAT_MESSAGE = f"{ERROR_EMOJI} Неправильный формат, попробуйте еще раз"
 
 # Buttons labels
 SYNC_BUTTON = f"Синхронизировать {SYNC_EMOJI}"
@@ -113,20 +140,30 @@ START_TOUR_BUTTON = f"Начать экскурсию {STAR_EMOJI}"
 IM_HERE_BUTTON = f"Я на месте! {LOCATION_PIN_EMOJI}"
 LOVED_IT_BUTTON = f"Очень понравилось! {LIKE_EMOJI}"
 COULD_BE_BETTER_BUTTON = f"Могло быть лучше. {DISLIKE_EMOJI}"
-CONNECT_TO_VOLK = f"Написать автору"
+CONNECT_TO_VOLK = f"{AUTHOR_EMOJI} Написать автору"
 BACK_TO_EXCURSIONS_BUTTON = f"{BACK_ARROW_EMOJI} Вернуться к экскурсиям"
 TRANSITION_CONFIRMATION_BUTTON = f"Хочу перейти к списку {BACK_ARROW_EMOJI}"
 ADD_EXCURSION_BUTTON = f"{PLUS_EMOJI} Добавить экскурсию"
-PUBLISH_EXCURSION_BUTTON = "Опубликовать/Скрыть экскурсию"
-EDIT_EXCURSION_BUTTON = f"Редактировать экскурсию"
+PUBLISH_EXCURSION_BUTTON = f"{PUBLISHED_EMOJI} Опубликовать / {DRAFT_EMOJI} Скрыть экскурсию"
+EDIT_EXCURSION_BUTTON = f"{EDITING_EMOJI} Редактировать экскурсию"
 ADD_POINT_BUTTON = f"{PLUS_EMOJI} Добавить новую точку {LOCATION_PIN_EMOJI}"
-EDIT_POINT_BUTTON = f"Редактировать точку"
-WRITE_TO_DEVELOPER_BUTTON = "Сообщить об ошибке"
+ADD_EXTRA_POINT_BUTTON = f"{PLUS_EMOJI} Добавить подтему {SUB_THEME_EMOJI}"
+EDIT_EXTRA_POINT_BUTTON = f"{EDITING_EMOJI} Редактировать подтему {SUB_THEME_EMOJI}"
+EDIT_POINT_BUTTON = f"{EDITING_EMOJI} Редактировать точку {LOCATION_PIN_EMOJI}"
+WRITE_TO_DEVELOPER_BUTTON = f"{ERROR_EMOJI} Сообщить об ошибке"
+OPEN_LOCATION_IN_GOOGLE_MAPS = f"{MAP_EMOJI} Открыть в Google Maps"
 YES_BUTTON = 'Да'
 NO_BUTTON = 'Нет'
-SKIP_FIELD_BUTTON = 'Пропустить поле'
-EDIT_POINTS_BUTTON = 'Редактировать точки'
-CHANGE_POINTS_ORDER_BUTTON = 'Редактировать порядок'
+SKIP_FIELD_BUTTON = f'{SKIP_EMOJI} Пропустить поле'
+EDIT_POINTS_BUTTON = f'{EDITING_EMOJI} Редактировать точки {LOCATION_PIN_EMOJI}{LOCATION_PIN_EMOJI}{LOCATION_PIN_EMOJI}'
+CHANGE_POINTS_ORDER_BUTTON = f'{CHANGE_ORDER_EMOTIONS} Редактировать порядок'
+DELETE_POINT_BUTTON = f"{DELETE_EMOJI} Удалить точку"
+DELETE_EXTRA_POINT_BUTTON = f"{DELETE_EMOJI} Удалить подтему"
+EXCURSION_STATS_BUTTON = f"{STATS_EMOJI} Статистика"
+EXCURSION_SUMMARY_BUTTON = f"{SUMMARY_EMOJI} Обзор экскурсии"
+DELETE_EXCURSION_BUTTON = f"{DELETE_EMOJI} Удалить экскурсию"
+DISABLE_SENDING_FILES_BUTTON = f"{FINISH_EMOJI} Закончить отправку файлов"
+RETURN_TO_PREVIOUS_MENU_STATE = f"{BACK_ARROW_EMOJI} Вернуться обратно"
 
 # Default settings to components labels
 DEFAULT_EXCURSION_NAME = "Название засекречено"
@@ -137,16 +174,18 @@ MESSAGE_TO_VOLK_URL = "https://t.me/ZeevVolk"
 MESSAGE_TO_DEVELOPER_URL = "https://t.me/ivanezox"
 
 # Fields messages
-EXCURSION_NAME_FIELD_MESSAGE = "Название экскурсии"
-EXCURSION_PAYMENT_REQUIREMENT_FIELD_MESSAGE = "Платная экскурсия"
+EXCURSION_NAME_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите название экскурсии. Если хотите оставить предыдущее значение, пропустите поле"
+EXCURSION_PAYMENT_REQUIREMENT_FIELD_MESSAGE = f"{QUESTION_EMOJI} Платная экскурсия?"
 
-INFORMATION_PART_NAME_FIELD_MESSAGE = "Название точки/отрывка"
-INFORMATION_PART_LINK_FIELD_MESSAGE = "Введите ссылку (если ссылки нет, то введите \"-\""
-INFORMATION_PART_AUDIO_FIELD_MESSAGE = "Пришлите файл с аудио"
-INFORMATION_PART_TEXT_FIELD_MESSAGE = "Введите текст"
-INFORMATION_PART_PHOTOS_FIELD_MESSAGE = "Пришлите фотографии"
-POINT_ADDRESS_FIELD_MESSAGE = "Введите адресс локации"
-POINT_LOCATION_PHOTO_FIELD_MESSAGE = "Пришлите фото геолокации"
+INFORMATION_PART_NAME_FIELD_MESSAGE = (f"{TEXT_EMOJI} Введите (пришлите сообщение) название точки/отрывка. "
+                                       "Если хотите оставить предыдущее значение, пропустите поле")
+INFORMATION_PART_LINK_FIELD_MESSAGE = f"{LINK_EMOJI} Введите ссылку (если ссылки нет, то пропустите это поле)"
+INFORMATION_PART_AUDIO_FIELD_MESSAGE = f"{AUDIO_EMOJI} Пришлите файлы с аудио. Если хотите оставить предыдущее значение, пропустите поле"
+INFORMATION_PART_TEXT_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите текст. Если хотите оставить предыдущее значение, пропустите поле"
+INFORMATION_PART_PHOTOS_FIELD_MESSAGE = f"{PHOTO_EMOJI} Пришлите фотографии. Если хотите оставить предыдущее значение, пропустите поле"
+POINT_ADDRESS_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите адресс локации. Если хотите оставить предыдущее значение, пропустите поле"
+POINT_LOCATION_PHOTO_FIELD_MESSAGE = f"{PHOTO_EMOJI} Пришлите фото геолокации. Если хотите оставить предыдущее значение, пропустите поле"
+POINT_LOCATION_LINK_FIELD_MESSAGE = f"{LINK_EMOJI} Пришлите ссылку на точку в Google Maps. Если хотите оставить предыдущее значение, пропустите поле"
 
 # Fields keys
 NAME_FIELD = "name"
@@ -161,10 +200,12 @@ INFORMATION_PART_LINK_FIELD = "link"
 POINT_ADDRESS_FIELD = "address"
 POINT_LOCATION_PHOTO_FIELD = "location_photo"
 POINT_EXTRA_INFORMATION_PART_FIELD = "extra_information_points"
+POINT_LOCATION_LINK_FIELD = "location_link"
 
 # Types
 PHOTO_TYPE = "photos"
 AUDIO_TYPE = "audio"
+ONE_PHOTO_TYPE = "photo"
 
 # get_fields() keys
 FIELD_MESSAGE_KEY = "field_message"
@@ -193,8 +234,15 @@ SKIP_FIELD_CALLBACK = "skip_field"
 EDIT_EXCURSION_CALLBACK = "edit_excursion_"
 ADD_POINT_CALLBACK = "add_point"
 EDIT_POINT_CALLBACK = "edit_point_"
+EDIT_EXTRA_POINT_CALLBACK = "edit_extra_point_"
 EDIT_POINTS_CALLBACK = "edit_points"
-ADD_EXTRA_INFORMATION_CALLBACK = "add_extra_information"
-EDIT_EXTRA_INFORMATION_CALLBACK = "edit_extra_information_"
+DELETE_POINT_CALLBACK = "delete_point_"
 CHANGE_POINTS_ORDER_CALLBACK = "change_points_order"
 EDIT_POINT_FIELDS_CALLBACK = "edit_point_fields_"
+ADD_EXTRA_POINT_CALLBACK = "add_extra_point_"
+EDIT_EXTRA_POINT_FIELDS_CALLBACK = "edit_fields_extra_point_"
+DELETE_EXTRA_POINT_CALLBACK = "delete_extra_point_"
+DELETE_EXCURSION_CALLBACK = "delete_excursion"
+EXCURSION_STATS_CALLBACK = "excursion_stats"
+EXCURSION_SUMMARY_CALLBACK = "excursion_summary"
+DISABLE_SENDING_FILES_CALLBACK = "disable_sending_files"

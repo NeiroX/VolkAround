@@ -1,21 +1,24 @@
 from typing import Dict, List, Any, Tuple
 import os
 
+from src.components.excursion.stats_object import StatsObject
 from src.constants import *
 from src.components.field import Field
 
 
-class InformationPart:
+class InformationPart(StatsObject):
     """
     Information part is a general class for the information that contains text and/or audio and optionally photos.
     """
+    information_part_id = 0
 
     def __init__(self, id: int, part_name: str = DEFAULT_INFORMATION_PART_NAME,
                  photos: List[str] = None,
-                 audio: str = None,
+                 audio: List[str] = None,
                  text: str = DEFAULT_TEXT,
-                 link: str = ""):
+                 link: str = "", visitors_num: int = 0, likes_num: int = 0, dislikes_num: int = 0):
         """Initialize an information part."""
+        super().__init__(visitors_num, likes_num, dislikes_num)
         # Set part's settings
         self.id = id
         self.part_name = part_name
@@ -24,7 +27,7 @@ class InformationPart:
             self.photos = [os.path.join(IMAGES_PATH, photo_path.split("/")[-1]) for photo_path in photos]
         self.audio = audio
         if self.audio:
-            self.audio = os.path.join(AUDIO_PATH, audio.split("/")[-1])
+            self.audio = [os.path.join(AUDIO_PATH, audio_path.split("/")[-1]) for audio_path in audio]
         self.text = text
         self.link = link
 
@@ -44,7 +47,7 @@ class InformationPart:
         """Returns the list of paths for photos provided for the information part."""
         return self.photos
 
-    def get_audio(self) -> str:
+    def get_audio(self) -> List[str]:
         """Returns the audio path for the information part."""
         return self.audio
 
@@ -65,19 +68,20 @@ class InformationPart:
             Field(INFORMATION_PART_NAME_FIELD_MESSAGE, NAME_FIELD, str),
             Field(INFORMATION_PART_LINK_FIELD_MESSAGE, INFORMATION_PART_LINK_FIELD, str),
             Field(INFORMATION_PART_TEXT_FIELD_MESSAGE, INFORMATION_PART_TEXT_FIELD, str),
+            Field(INFORMATION_PART_PHOTOS_FIELD_MESSAGE, INFORMATION_PART_PHOTOS_FIELD, PHOTO_TYPE),
             Field(INFORMATION_PART_AUDIO_FIELD_MESSAGE, INFORMATION_PART_AUDIO_FIELD, AUDIO_TYPE),
-            Field(INFORMATION_PART_PHOTOS_FIELD_MESSAGE, INFORMATION_PART_PHOTOS_FIELD, PHOTO_TYPE)
         ]
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the information part to a dictionary for database serialization."""
-        return {
+        information_part_dict = super().to_dict()
+        additional_data = {
             "id": self.id,
-            "name": self.part_name,
-            "photos": self.photos,
-            "audio": self.audio,
-            "text": self.text,
-            "link": self.link
+            NAME_FIELD: self.part_name,
+            INFORMATION_PART_PHOTOS_FIELD: self.photos,
+            INFORMATION_PART_AUDIO_FIELD: self.audio,
+            INFORMATION_PART_TEXT_FIELD: self.text,
+            INFORMATION_PART_LINK_FIELD: self.link
         }
-
-
+        information_part_dict.update(additional_data)
+        return information_part_dict
