@@ -12,7 +12,7 @@ class InformationPart(StatsObject):
     """
     information_part_id = 0
 
-    def __init__(self, id: int, part_name: str = DEFAULT_INFORMATION_PART_NAME,
+    def __init__(self, id: int, parent_id: int, part_name: str = DEFAULT_INFORMATION_PART_NAME,
                  photos: List[str] = None,
                  audio: List[str] = None,
                  text: str = DEFAULT_TEXT,
@@ -21,6 +21,7 @@ class InformationPart(StatsObject):
         super().__init__(visitors_num, likes_num, dislikes_num)
         # Set part's settings
         self.id = id
+        self.parent_id = parent_id
         self.part_name = part_name
         self.photos = photos
         if self.photos:
@@ -42,6 +43,10 @@ class InformationPart(StatsObject):
     def get_link(self) -> str:
         """Returns the link of the information part."""
         return self.link
+
+    def get_parent_id(self):
+        """Returns the id of the parent information."""
+        return self.parent_id
 
     def get_photos(self) -> List[str]:
         """Returns the list of paths for photos provided for the information part."""
@@ -73,10 +78,11 @@ class InformationPart(StatsObject):
         ]
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert the information part to a dictionary for database serialization."""
+        """Convert the information part to a dictionary for data serialization."""
         information_part_dict = super().to_dict()
         additional_data = {
             "id": self.id,
+            "parent_id": self.parent_id,
             NAME_FIELD: self.part_name,
             INFORMATION_PART_PHOTOS_FIELD: self.photos,
             INFORMATION_PART_AUDIO_FIELD: self.audio,

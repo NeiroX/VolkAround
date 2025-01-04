@@ -8,13 +8,14 @@ from src.components.excursion.point.information_part import InformationPart
 class Point(InformationPart):
     point_id = 0
 
-    def __init__(self, id: int, address: str = DEFAULT_ADDRESS, location_photo: str = None,
+    def __init__(self, id: int, excursion_id: int, address: str = DEFAULT_ADDRESS, location_photo: str = None,
                  photos: List[str] = None, audio: str = None, text: str = DEFAULT_TEXT,
                  part_name: str = DEFAULT_INFORMATION_PART_NAME,
                  link: str = None,
                  extra_information_points: List[InformationPart] = None, location_link: str = None,
                  visitors_num: int = 0, likes_num: int = 0, dislikes_num: int = 0):
-        super().__init__(id=id, part_name=part_name, photos=photos, audio=audio, text=text, link=link,
+        super().__init__(id=id, parent_id=excursion_id, part_name=part_name, photos=photos, audio=audio, text=text,
+                         link=link,
                          visitors_num=visitors_num, likes_num=likes_num, dislikes_num=dislikes_num)
         # Location info
         self.address = address

@@ -10,7 +10,7 @@ from src.components.messages.message_sender import MessageSender  # Assuming Mes
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.point import Point
 from src.components.user.user_state import UserState
-from src.database.load_manager import LoadManager
+from src.data.load_manager import LoadManager
 from src.constants import *
 
 
@@ -25,20 +25,22 @@ class Bot:
 
     def __init__(self, token):
         self.application = Application.builder().token(token).build()
-        self.user_states = LoadManager.load_user_states_from_json()  # Keeps track of UserState objects for each user
-        self.excursions = LoadManager.load_excursions_from_json()  # Dictionary of all available excursions
+
+        self.data_loader = LoadManager()
+        self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
+        self.excursions = self.data_loader.load_excursions()  # Dictionary of all available excursions
 
     def get_user_state(self, user_id: int, username: str = None):
         """Gets or creates the user state for the given user."""
         if user_id not in self.user_states:
-            self.user_states[user_id] = UserState(username=username, user_id=user_id)
-            self.user_states[user_id].add_paid_excursion(self.excursions["Мир Оксимирона: Комнаты творчества"])
-            LoadManager.save_user_state(self.user_states[user_id])
+            is_admin = True if username in {"ivanezox", "ZeevVolk"} else False
+            self.user_states[user_id] = UserState(username=username, user_id=user_id, is_admin=is_admin)
+            self.data_loader.save_user_state(self.user_states[user_id])
         return self.user_states[user_id]
 
     def sync_data(self) -> None:
-        self.user_states = LoadManager.load_user_states_from_json()  # Keeps track of UserState objects for each user
-        self.excursions = LoadManager.load_excursions_from_json()
+        self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
+        self.excursions = self.data_loader.load_excursions()
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the /start command."""
@@ -211,8 +213,8 @@ class Bot:
         user_state.add_completed_excursion(user_state.get_current_excursion())
         current_excursion = user_state.get_current_excursion()
         current_excursion.increase_visitors_num()
-        LoadManager.save_excursion_data(current_excursion)
-        LoadManager.save_user_state(user_state)
+        self.data_loader.save_excursion(current_excursion)
+        self.data_loader.save_user_state(user_state)
         await query.message.reply_text(
             f"Поздравляю! Вы завершили {excursion_name}! {CONGRATULATIONS_EMOJI}")
 
@@ -234,7 +236,7 @@ class Bot:
         else:
             user_state.get_current_excursion().increase_dislikes_num()
         # Save updated info
-        LoadManager.save_excursion_data(user_state.get_current_excursion())
+        self.data_loader.save_excursion(user_state.get_current_excursion())
         await MessageSender.send_feedback_response(query)
 
     async def change_chosen_excursion_visibility(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -269,7 +271,7 @@ class Bot:
         user_state = self.get_user_state(user_id=update.callback_query.from_user.id)
         await MessageSender.delete_previous_buttons(query)
         Point.point_id += 1
-        new_point = Point(Point.point_id)
+        new_point = Point(Point.point_id, user_state.get_current_excursion().get_id())
         user_state.user_editor.enable_editing_mode(new_point, return_callback=ADD_POINT_CALLBACK,
                                                    return_message=ADD_POINT_BUTTON,
                                                    return_to_previous_menu_callback=EDIT_POINTS_CALLBACK,
@@ -282,7 +284,7 @@ class Bot:
         point_id = int(query.data.split("_")[-1])
         await MessageSender.delete_previous_buttons(query)
         InformationPart.information_part_id += 1
-        new_information_part = InformationPart(InformationPart.information_part_id)
+        new_information_part = InformationPart(InformationPart.information_part_id, parent_id=point_id)
         user_state.user_editor.enable_editing_mode(new_information_part, point_id=point_id,
                                                    return_callback=ADD_EXTRA_POINT_CALLBACK,
                                                    return_message=ADD_EXTRA_POINT_BUTTON,
@@ -322,7 +324,7 @@ class Bot:
                         point.update_extra_information_points(editing_item)
                         print("Updated extra points")
             self.excursions[excursion_to_save.get_name()] = excursion_to_save
-        LoadManager.save_excursion_data(excursion_to_save)
+        self.data_loader.save_excursion(excursion_to_save)
 
     async def handle_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(user_id=update.message.from_user.id)
@@ -538,7 +540,9 @@ class Bot:
         point_id = int(update.callback_query.data.split("_")[-1])
         for point in user_state.get_current_excursion().get_points():
             if point.get_id() == point_id:
-                user_state.user_editor.enable_editing_mode(point, point_id=point_id)
+                user_state.user_editor.enable_editing_mode(point, point_id=point_id,
+                                                           return_to_previous_menu_callback=EDIT_POINTS_CALLBACK,
+                                                           return_to_previous_menu_message=EDIT_POINTS_BUTTON)
                 await self.handle_next_field(update, context)
                 return
 
@@ -563,7 +567,7 @@ class Bot:
                     if extra_point_audio: files_to_delete.extend(extra_point_audio)
                 self.delete_files(files_to_delete)
                 current_excursion.points.remove(point)
-                LoadManager.save_excursion_data(current_excursion)
+                self.data_loader.save_excursion(current_excursion)
                 previous_menu_button = InlineKeyboardButton(EDIT_POINTS_BUTTON,
                                                             callback_data=f"{EDIT_POINTS_CALLBACK}")
                 await AdminMessageSender.send_success_message(update)
@@ -590,7 +594,7 @@ class Bot:
                         if extra_point_audio: files_to_delete.extend(extra_point_audio)
                         self.delete_files(files_to_delete)
                         point.extra_information_points.remove(extra_point)
-                        LoadManager.save_excursion_data(current_excursion)
+                        self.data_loader.save_excursion(current_excursion)
                         # Return button
                         previous_menu_button = InlineKeyboardButton(EDIT_POINT_BUTTON,
                                                                     callback_data=f"{EDIT_POINT_CALLBACK}{point_id}")
@@ -623,7 +627,9 @@ class Bot:
                 for extra_point in point.get_extra_information_points():
                     if extra_point.get_id() == extra_point_id:
                         user_state.user_editor.enable_editing_mode(extra_point, point_id=point_id,
-                                                                   extra_information_point_id=extra_point_id)
+                                                                   extra_information_point_id=extra_point_id,
+                                                                   return_to_previous_menu_callback=EDIT_EXTRA_POINT_CALLBACK,
+                                                                   return_to_previous_menu_message=EDIT_EXTRA_POINT_BUTTON)
                         await self.handle_next_field(update, context)
                         return
 
@@ -666,7 +672,7 @@ class Bot:
                                     enumerate(user_state.get_current_excursion().get_points(), start=1)}
                 current_excursion = user_state.get_current_excursion()
                 current_excursion.points = [old_points_order[new_index] for new_index in new_points_order]
-                LoadManager.save_excursion_data(current_excursion)
+                self.data_loader.save_excursion(current_excursion)
 
                 # Return button
                 await AdminMessageSender.send_success_message(update)
@@ -697,7 +703,7 @@ class Bot:
 
         self.delete_files(files_to_delete)
         del self.excursions[current_excursion.get_name()]
-        LoadManager.delete_excursion_data(current_excursion.excursion_id)
+        self.data_loader.delete_excursion(current_excursion.excursion_id)
         await AdminMessageSender.send_success_message(update)
 
     @staticmethod

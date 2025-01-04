@@ -1,5 +1,5 @@
 from src.components.messages.bot import Bot
-from src.constants import TOKEN
+from src.settings import TOKEN
 
 if __name__ == "__main__":
     if not TOKEN:
