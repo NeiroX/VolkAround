@@ -58,8 +58,6 @@ STOP_EMOJI = u"\U0001F6D1"  # 🛑
 DANGER_WARNING_EMOJI = u"\U00002620"  # ☠️
 
 # Paths
-USER_STATES_PATH = os.path.abspath("data/user_states.json")
-EXCURSIONS_INFO_PATH = os.path.abspath("data/excursions.json")
 AUDIO_PATH = os.path.abspath("media/audio")
 IMAGES_PATH = os.path.abspath("media/images")
 

@@ -5,12 +5,10 @@ from pymongo.synchronous.collection import Collection
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.information_part import InformationPart
 from src.components.excursion.point.point import Point
-import os
-import json
 from pymongo import MongoClient
-from src.constants import EXCURSIONS_INFO_PATH, USER_STATES_PATH, TEXT_MODE, DEFAULT_TEXT, DEFAULT_ADDRESS, \
+from src.constants import TEXT_MODE, DEFAULT_TEXT, DEFAULT_ADDRESS, \
     DEFAULT_EXCURSION_NAME, DEFAULT_INFORMATION_PART_NAME, USER_STATE_COLLECTION, EXCURSION_COLLECTION, \
-    POINT_COLLECTION, EXTRA_INFO_COLLECTION
+    POINT_COLLECTION, EXTRA_INFO_COLLECTION, ADMINS_LIST
 from src.settings import DATABASE_URL, DATABASE_NAME
 from src.components.user.user_state import UserState
 
@@ -107,8 +105,8 @@ class LoadManager:
             print(f"Loaded user: {user_data}")
             username = user_data.get("username")
             user_id = user_data.get("user_id")
-            mode = user_data.get("mode")
-            if username in {"Donnie_Stockman", "ivanezox", "ZeevVolk"}:
+            mode = user_data.get("mode", TEXT_MODE)
+            if username in ADMINS_LIST:
                 is_admin = True
             else:
                 is_admin = user_data.get("is_admin", False)
@@ -123,7 +121,8 @@ class LoadManager:
         """Saves or updates an information part in the MongoDB collection."""
         existing_part = self.information_parts_collection.find_one({"point_id": information_part.get_id()})
         if existing_part:
-            self.information_parts_collection.replace_one({"point_id": information_part.get_id()}, information_part.to_dict())
+            self.information_parts_collection.replace_one({"point_id": information_part.get_id()},
+                                                          information_part.to_dict())
         else:
             self.information_parts_collection.insert_one(information_part.to_dict())
         print(f"Saved information part {information_part.part_name} to MongoDB.")
@@ -189,6 +188,8 @@ class LoadManager:
         self.points_collection.delete_many({})
         self.excursions_collection.delete_many({})
 
+
+    # JSON USAGE
     #
     # @staticmethod
     # def load_excursions_from_json() -> Dict[str, Excursion]:
