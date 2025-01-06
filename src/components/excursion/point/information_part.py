@@ -1,9 +1,8 @@
-from typing import Dict, List, Any, Tuple
-import os
+from typing import Dict, List, Any
 
 from src.components.excursion.stats_object import StatsObject
-from src.constants import *
 from src.components.field import Field
+from src.constants import *
 
 
 class InformationPart(StatsObject):
@@ -12,28 +11,25 @@ class InformationPart(StatsObject):
     """
     information_part_id = 0
 
-    def __init__(self, id: int, parent_id: int, part_name: str = DEFAULT_INFORMATION_PART_NAME,
+    def __init__(self, information_point_id: int, parent_id: int, part_name: str = DEFAULT_INFORMATION_PART_NAME,
                  photos: List[str] = None,
                  audio: List[str] = None,
                  text: str = DEFAULT_TEXT,
-                 link: str = "", visitors_num: int = 0, likes_num: int = 0, dislikes_num: int = 0):
+                 link: str = "", views_num: int = 0, likes_num: int = 0, dislikes_num: int = 0,
+                 visitors: List[int] = None):
         """Initialize an information part."""
-        super().__init__(visitors_num, likes_num, dislikes_num)
+        super().__init__(views_num, likes_num, dislikes_num, visitors=visitors)
         # Set part's settings
-        self.id = id
+        self.id = information_point_id
         self.parent_id = parent_id
         self.part_name = part_name
         self.photos = photos
-        if self.photos:
-            self.photos = [os.path.join(IMAGES_PATH, photo_path.split("/")[-1]) for photo_path in photos]
         self.audio = audio
-        if self.audio:
-            self.audio = [os.path.join(AUDIO_PATH, audio_path.split("/")[-1]) for audio_path in audio]
         self.text = text
         self.link = link
 
     def get_id(self):
-        """Returns the unique id of the information part."""
+        """Returns the unique point_id of the information part."""
         return self.id
 
     def get_name(self) -> str:
@@ -45,7 +41,7 @@ class InformationPart(StatsObject):
         return self.link
 
     def get_parent_id(self):
-        """Returns the id of the parent information."""
+        """Returns the point_id of the parent information."""
         return self.parent_id
 
     def get_photos(self) -> List[str]:
@@ -81,7 +77,7 @@ class InformationPart(StatsObject):
         """Convert the information part to a dictionary for data serialization."""
         information_part_dict = super().to_dict()
         additional_data = {
-            "id": self.id,
+            "point_id": self.id,
             "parent_id": self.parent_id,
             NAME_FIELD: self.part_name,
             INFORMATION_PART_PHOTOS_FIELD: self.photos,

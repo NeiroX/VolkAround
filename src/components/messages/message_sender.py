@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto, InputMediaAudio
 from telegram.ext import CallbackContext
 
@@ -7,7 +9,9 @@ from src.components.excursion.point.point import Point
 from src.components.excursion.point.information_part import InformationPart
 
 from src.components.excursion.excursion import Excursion
-from typing import Dict, List
+from typing import Dict, List, Union
+
+from src.data.s3bucket import s3_fetch_file
 
 
 class MessageSender:
@@ -43,7 +47,7 @@ class MessageSender:
                 callback_data = DISABLED_CALLBACK
             elif excursion_obj.is_paid_excursion() and user_state.does_have_access(excursion_obj):
                 button_text = f"{MONEY_SACK_EMOJI} {button_text}"
-            if user_state.is_excursion_completed(excursion_obj):
+            if excursion_obj.is_completed(user_state.get_user_id()):
                 button_text = f"{CHECK_MARK_EMOJI} {button_text}"
             if user_state.does_have_admin_access():
                 if excursion_obj.is_draft_excursion():
@@ -56,6 +60,9 @@ class MessageSender:
         keyboard.append([InlineKeyboardButton(SYNC_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)])
         if user_state.does_have_admin_access():
             keyboard.append([InlineKeyboardButton(ADD_EXCURSION_BUTTON, callback_data=ADD_EXCURSION_CALLBACK)])
+            if excursions:
+                keyboard.append(
+                    [InlineKeyboardButton(DELETE_ALL_COLLECTIONS_BUTTON, callback_data=DELETE_ALL_COLLECTIONS_CALLBACK)])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -73,6 +80,7 @@ class MessageSender:
         await query.answer(f"Вы выбрали {excursion.get_name()}. Начнем наш тур!")
         keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
         if is_admin:
+            points_number = len(excursion.get_points())
             keyboard.append([InlineKeyboardButton(EXCURSION_STATS_BUTTON, callback_data=EXCURSION_STATS_CALLBACK)])
             keyboard.append([InlineKeyboardButton(EXCURSION_SUMMARY_BUTTON, callback_data=EXCURSION_SUMMARY_CALLBACK)])
             keyboard.append([InlineKeyboardButton(EDIT_EXCURSION_BUTTON, callback_data=EDIT_EXCURSION_CALLBACK)])
@@ -80,13 +88,18 @@ class MessageSender:
                                                   callback_data=f"{PUBLISH_CHOSEN_EXCURSION_CALLBACK}"
                                                                 f"{excursion.get_id()}")])
             keyboard.append([InlineKeyboardButton(EDIT_POINTS_BUTTON, callback_data=EDIT_POINTS_CALLBACK)])
-            keyboard.append([InlineKeyboardButton(CHANGE_POINTS_ORDER_BUTTON,
-                                                  callback_data=CHANGE_POINTS_ORDER_CALLBACK)])
+            if points_number > 1:
+                keyboard.append([InlineKeyboardButton(CHANGE_POINTS_ORDER_BUTTON,
+                                                      callback_data=CHANGE_POINTS_ORDER_CALLBACK)])
             keyboard.append([InlineKeyboardButton(DELETE_EXCURSION_BUTTON, callback_data=DELETE_EXCURSION_CALLBACK)])
         keyboard.append([InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)])
         reply_markup = InlineKeyboardMarkup(keyboard)
+        excursion_duration = excursion.get_duration()
+        message = f"Добро пожаловать в {excursion.get_name()}! {STAR_EMOJI}\n\n{EXCURSION_START_MESSAGE}"
+        if excursion_duration > 0:
+            message += f"\n\n{TIME_EMOJI}Длительность экскурсии примерно: {excursion.get_duration()} минут"
         await query.message.reply_text(
-            f"Добро пожаловать в {excursion.get_name()}! {STAR_EMOJI}\n\n{EXCURSION_START_MESSAGE}",
+            message,
             reply_markup=reply_markup,
         )
 
@@ -123,16 +136,30 @@ class MessageSender:
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         if point.get_location_photo():
-            with open(point.get_location_photo(), "rb") as photo:
-                await query.message.reply_photo(
-                    photo=photo,
-                    caption=(
-                        f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                        f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*"
-                    ),
-                    parse_mode="Markdown",
-                    reply_markup=reply_markup,
-                )
+            try:
+                # Fetch the photo from S3
+                file_name = point.get_location_photo()  # Assume this is the S3 object key
+                print(file_name)
+                s3_file_obj = s3_fetch_file(file_name)
+
+                if s3_file_obj:
+                    # Read the file content into a BytesIO object
+                    s3_file_obj.seek(0)
+
+                    await query.message.reply_photo(
+                        photo=s3_file_obj,
+                        caption=(
+                            f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
+                            f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*"
+                        ),
+                        parse_mode="Markdown",
+                        reply_markup=reply_markup,
+                    )
+                else:
+                    await query.message.reply_text("Ошибка: Фотография не найдена в S3.")
+            except Exception as e:
+                print(f"Error fetching photo from S3: {e}")
+                await query.message.reply_text("Произошла ошибка при загрузке фотографии.")
         else:
             await query.message.reply_text(
                 f"Ваш следующий пункт назначения:\n\n"
@@ -143,24 +170,44 @@ class MessageSender:
             )
 
     @staticmethod
-    async def send_media_group(sender: Update | CallbackQuery, files_paths: List[str] | None, is_photo: bool) -> None:
-        """Sends audio group."""
+    async def send_media_group(
+            sender: Union[Update, CallbackQuery],
+            files_paths: List[str] | None,
+            is_photo: bool
+    ) -> None:
+        """Sends a group of media files (photos or audio) using URLs from S3."""
         if files_paths and sender:
-            media_group = list()
-            for file_path in files_paths:
-                print(file_path)
+            media_group = []
+
+            for file_url in files_paths:
+                print(f"Preparing media: {file_url}")
                 try:
-                    with open(file_path, "rb") as file:
-                        new_media_element = InputMediaPhoto(file) if is_photo else InputMediaAudio(file)
-                        media_group.append(
-                            new_media_element
-                        )
-                except FileNotFoundError:
-                    await sender.message.reply_text(f"Media not found: {new_media_element}")
+                    s3_file_obj = s3_fetch_file(file_url)
+
+                    if not isinstance(s3_file_obj, BytesIO):
+                        raise ValueError("s3_fetch_file did not return a BytesIO object.")
+                    # Reset the BytesIO pointer to the beginning
+                    s3_file_obj.seek(0)
+                    # Create the appropriate media element (photo or audio)
+                    new_media_element = (
+                        InputMediaPhoto(media=s3_file_obj) if is_photo else InputMediaAudio(media=s3_file_obj)
+                    )
+                    print(f"Prepared media element: {new_media_element}")
+                    media_group.append(new_media_element)
+                except Exception as e:
+                    # Handle any issues with creating media elements
+                    print(f"Error processing media: {e}")
+                    if hasattr(sender, "message") and sender.message:
+                        await sender.message.reply_text(f"Ошибка загрузки медиа: {file_url}")
                     return
 
             if media_group:
-                await sender.message.reply_media_group(media_group)
+                try:
+                    await sender.message.reply_media_group(media=media_group)
+                except Exception as e:
+                    print(f"Failed to send media group: {e}")
+                    if hasattr(sender, "message") and sender.message:
+                        await sender.message.reply_text("Ошибка отправки медиа.")
 
     @staticmethod
     async def send_part(query: CallbackQuery, part: InformationPart | Point, mode: str) -> None:
@@ -213,7 +260,7 @@ class MessageSender:
             await query.message.reply_text(NEGATIVE_FEEDBACK_MESSAGE, reply_markup=reply_markup)
 
     @staticmethod
-    async def send_move_on_request(query: CallbackQuery, point: Point) -> None:
+    async def send_move_on_request(query: CallbackQuery, point: Point, user_id: int) -> None:
         """Requests the user to confirm moving to the next part."""
         keyboard = [[InlineKeyboardButton(MOVE_ON_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
 
@@ -222,7 +269,10 @@ class MessageSender:
             for num, elem in enumerate(extra_information_points):
                 print("Send move on request")
                 print(num, elem.get_name())
-                keyboard.append([InlineKeyboardButton(elem.get_name(), callback_data=EXTRA_PART_CALLBACK + str(num))])
+                button_text = elem.get_name()
+                if elem.is_completed(user_id):
+                    button_text = f"{CHECK_MARK_EMOJI} {button_text}"
+                keyboard.append([InlineKeyboardButton(button_text, callback_data=EXTRA_PART_CALLBACK + str(num))])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_text(MOVE_ON_REQUEST_MESSAGE, reply_markup=reply_markup)

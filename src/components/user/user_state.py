@@ -6,8 +6,8 @@ from src.constants import TEXT_MODE, AUDIO_MODE, AUDIO_MODE_RU, TEXT_MODE_RU
 class UserState:
     """Tracks the state of an individual user."""
 
-    def __init__(self, username: str, user_id: int, mode: str = TEXT_MODE, paid_excursions: list[str] = None,
-                 completed_excursions: list[str] = None, is_admin: bool = False) -> None:
+    def __init__(self, username: str, user_id: int, mode: str = TEXT_MODE, paid_excursions: list[int] = None,
+                 completed_excursions: list[int] = None, is_admin: bool = False) -> None:
         self.username = username
         self.user_id = user_id
         self.is_admin = is_admin
@@ -15,7 +15,6 @@ class UserState:
         self.current_excursion = None
         self.current_excursion_step = -1
         self.paid_excursions = paid_excursions if paid_excursions is not None else []
-        self.completed_excursions = completed_excursions if completed_excursions is not None else []
         self.user_editor = UserEditor()
 
     def change_mode(self) -> None:
@@ -29,7 +28,7 @@ class UserState:
         self.current_excursion = excursion
 
     def does_have_access(self, excursion: Excursion) -> bool:
-        if self.is_admin or excursion.get_name() in self.paid_excursions:
+        if self.is_admin or excursion.get_id() in self.paid_excursions:
             return True
         return False
 
@@ -37,7 +36,7 @@ class UserState:
         return self.is_admin
 
     def is_excursion_completed(self, excursion: Excursion) -> bool:
-        if excursion.get_name() in self.completed_excursions:
+        if excursion.get_id() in self.completed_excursions:
             return True
         return False
 
@@ -60,12 +59,8 @@ class UserState:
     def get_user_id(self) -> int:
         return self.user_id
 
-    def add_completed_excursion(self, excursion: Excursion) -> None:
-        print()
-        self.completed_excursions.append(excursion.get_name())
-
     def add_paid_excursion(self, excursion: Excursion) -> None:
-        self.paid_excursions.append(excursion.get_name())
+        self.paid_excursions.append(excursion.get_id())
 
     def get_mode(self) -> str:
         return AUDIO_MODE_RU if self.mode == AUDIO_MODE else TEXT_MODE_RU
@@ -78,5 +73,4 @@ class UserState:
             "mode": self.mode,
             "is_admin": self.is_admin,
             "paid_excursions": self.paid_excursions,
-            "completed_excursions": self.completed_excursions
         }

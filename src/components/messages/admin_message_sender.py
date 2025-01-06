@@ -1,11 +1,12 @@
-from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update, InputMediaPhoto
-from typing import Dict, List
+from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from typing import List, Union
 
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.information_part import InformationPart
 from src.components.excursion.point.point import Point
 from src.components.messages.message_sender import MessageSender
 from src.constants import *
+from src.data.s3bucket import s3_fetch_file
 
 
 class AdminMessageSender:
@@ -38,12 +39,19 @@ class AdminMessageSender:
 
     @staticmethod
     async def send_current_state(update: Update, field_current_state: str,
-                                 photos: List[str] = None,
-                                 audio_paths: List[str] = None) -> None:
+                                 photos: Union[List[str], str] = None,
+                                 audio_paths: List[str] = None, one_photo: bool = False) -> None:
         sender = AdminMessageSender.get_message_sender(update)
         await sender.message.reply_text(f"{CURRENT_FIELD_VALUE}\n{field_current_state}")
         if photos:
-            await MessageSender.send_media_group(sender, photos, is_photo=True)
+            if not one_photo:
+                await MessageSender.send_media_group(sender, photos, is_photo=True)
+            else:
+                s3_file_obj = s3_fetch_file(photos)
+                if s3_file_obj:
+                    # Read the file content into a BytesIO object
+                    s3_file_obj.seek(0)
+                    await sender.message.reply_photo(s3_file_obj)
         elif audio_paths:
             await MessageSender.send_media_group(sender, audio_paths, is_photo=False)
 
@@ -67,6 +75,7 @@ class AdminMessageSender:
             message = (f"Текущая экскурсия: {excursion.get_name()}\n"
                        f"Опубликована? {"Нет" if excursion.is_draft_excursion() else "Да"}\n"
                        f"Платная экскурсия? {"Нет" if not excursion.is_paid_excursion() else "Да"}\n\n"
+                       f"Длительность экскурсии: {excursion.get_duration()} минут\n"
                        f"Точки и их подтемы:\n")
 
             for index, point in enumerate(excursion.get_points(), start=1):
@@ -83,10 +92,23 @@ class AdminMessageSender:
         sender = AdminMessageSender.get_message_sender(update)
         if excursion and sender:
             message = (f"Текущая экскурсия: {excursion.get_name()}\n"
-                       f"{PERSON_EMOJI} Количество прошедших экскурсию: {excursion.get_visitors_number()}\n"
-                       f"{LIKE_EMOJI} Количество лайков: {excursion.get_likes_number()}\n"
-                       f"{DISLIKE_EMOJI} Количество дизлайков: {excursion.get_dislikes_number()}\n")
+                       f"Количество просмотров экскурсий: {excursion.get_views_num()}\n"
+                       f"{PERSON_EMOJI} Количество уникальных пользователей прошедших экскурсию:"
+                       f" {excursion.get_unique_visitors_num()}\n"
+                       f"{LIKE_EMOJI} Количество лайков: {excursion.get_likes_num()}\n"
+                       f"{DISLIKE_EMOJI} Количество дизлайков: {excursion.get_dislikes_num()}\n")
             keyboard = [[InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await sender.message.reply_text(message, reply_markup=reply_markup)
+
+    @staticmethod
+    async def approve_deleting_message(update: Update, callback: str) -> None:
+        sender = AdminMessageSender.get_message_sender(update)
+        if sender:
+            message = f"{STOP_EMOJI}{WARNING_EMOJI} Вы подтверждаете, что хотите удалить элемент?"
+            keyboard = [[InlineKeyboardButton(APPROVE_DELETING_BUTTON,
+                                              callback_data=f"{APPROVE_DELETING_CALLBACK}|{callback}")],
+                        [InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await sender.message.reply_text(message, reply_markup=reply_markup)
 
@@ -94,7 +116,8 @@ class AdminMessageSender:
     async def send_form_photo_field_message(update: Update, field_message: str,
                                             field_current_state: str = None,
                                             current_photos: List[str] = None, one_photo: bool = False) -> None:
-        await AdminMessageSender.send_current_state(update, field_current_state, photos=current_photos)
+        await AdminMessageSender.send_current_state(update, field_current_state, photos=current_photos,
+                                                    one_photo=one_photo)
         sender = AdminMessageSender.get_message_sender(update)
         if sender:
             keyboard = [[InlineKeyboardButton(SKIP_FIELD_BUTTON, callback_data=SKIP_FIELD_CALLBACK)]]

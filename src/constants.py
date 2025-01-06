@@ -52,6 +52,10 @@ TEXT_EMOJI = "\U0001F4AC"  # 💬
 QUESTION_EMOJI = "\U00002753"  # ❓
 CURRENT_STATE_EMOJI = "\U000026F3"  # ⛳
 FINISH_EMOJI = "\U0001F3C1"  # 🏁
+TIME_EMOJI = u"\u231B"  # ⌛
+WARNING_EMOJI = u"\U0001F7E1"  # 🟡
+STOP_EMOJI = u"\U0001F6D1"  # 🛑
+DANGER_WARNING_EMOJI = u"\U00002620"  # ☠️
 
 # Paths
 USER_STATES_PATH = os.path.abspath("data/user_states.json")
@@ -60,6 +64,7 @@ AUDIO_PATH = os.path.abspath("media/audio")
 IMAGES_PATH = os.path.abspath("media/images")
 
 # User state modes
+ADMINS_LIST = {"ivanezox", "zeevvolk"}
 AUDIO_MODE = "audio"
 TEXT_MODE = "text"
 AUDIO_MODE_RU = 'аудио формат'
@@ -154,6 +159,8 @@ EXCURSION_SUMMARY_BUTTON = f"{SUMMARY_EMOJI} Обзор экскурсии"
 DELETE_EXCURSION_BUTTON = f"{DELETE_EMOJI} Удалить экскурсию"
 DISABLE_SENDING_FILES_BUTTON = f"{FINISH_EMOJI} Закончить отправку файлов"
 RETURN_TO_PREVIOUS_MENU_STATE = f"{BACK_ARROW_EMOJI} Вернуться обратно"
+DELETE_ALL_COLLECTIONS_BUTTON = f"{DELETE_EMOJI} Удалить все"
+APPROVE_DELETING_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю удаление"
 
 # Default settings to components labels
 DEFAULT_EXCURSION_NAME = "Название засекречено"
@@ -166,6 +173,9 @@ MESSAGE_TO_DEVELOPER_URL = "https://t.me/ivanezox"
 # Fields messages
 EXCURSION_NAME_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите название экскурсии. Если хотите оставить предыдущее значение, пропустите поле"
 EXCURSION_PAYMENT_REQUIREMENT_FIELD_MESSAGE = f"{QUESTION_EMOJI} Платная экскурсия?"
+EXCURSION_DURATION_FIELD_MESSAGE = (f"{TEXT_EMOJI}{CHANGE_ORDER_EMOTIONS} Введите длительность экскурсии в минутах."
+                                    f" Если хотите оставить предыдущее значение, пропустите поле.\n"
+                                    f"{ERROR_EMOJI} Важно: вводите только число")
 
 INFORMATION_PART_NAME_FIELD_MESSAGE = (f"{TEXT_EMOJI} Введите (пришлите сообщение) название точки/отрывка. "
                                        "Если хотите оставить предыдущее значение, пропустите поле")
@@ -181,6 +191,7 @@ POINT_LOCATION_LINK_FIELD_MESSAGE = f"{LINK_EMOJI} Пришлите ссылку
 NAME_FIELD = "name"
 # Excursion
 EXCURSION_IS_PAID_FIELD = "is_paid"
+EXCURSION_DURATION_FIELD = "duration"
 # Information part
 INFORMATION_PART_TEXT_FIELD = "text"
 INFORMATION_PART_PHOTOS_FIELD = "photos"
@@ -236,3 +247,5 @@ DELETE_EXCURSION_CALLBACK = "delete_excursion"
 EXCURSION_STATS_CALLBACK = "excursion_stats"
 EXCURSION_SUMMARY_CALLBACK = "excursion_summary"
 DISABLE_SENDING_FILES_CALLBACK = "disable_sending_files"
+DELETE_ALL_COLLECTIONS_CALLBACK = "delete_all_collections"
+APPROVE_DELETING_CALLBACK = "approve_deleting"
