@@ -62,7 +62,8 @@ class MessageSender:
             keyboard.append([InlineKeyboardButton(ADD_EXCURSION_BUTTON, callback_data=ADD_EXCURSION_CALLBACK)])
             if excursions:
                 keyboard.append(
-                    [InlineKeyboardButton(DELETE_ALL_COLLECTIONS_BUTTON, callback_data=DELETE_ALL_COLLECTIONS_CALLBACK)])
+                    [InlineKeyboardButton(DELETE_ALL_COLLECTIONS_BUTTON,
+                                          callback_data=DELETE_ALL_COLLECTIONS_CALLBACK)])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -81,7 +82,7 @@ class MessageSender:
         keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
         if is_admin:
             points_number = len(excursion.get_points())
-            keyboard.append([InlineKeyboardButton(EXCURSION_STATS_BUTTON, callback_data=EXCURSION_STATS_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(STATS_BUTTON, callback_data=EXCURSION_STATS_CALLBACK)])
             keyboard.append([InlineKeyboardButton(EXCURSION_SUMMARY_BUTTON, callback_data=EXCURSION_SUMMARY_CALLBACK)])
             keyboard.append([InlineKeyboardButton(EDIT_EXCURSION_BUTTON, callback_data=EDIT_EXCURSION_CALLBACK)])
             keyboard.append([InlineKeyboardButton(PUBLISH_EXCURSION_BUTTON,
@@ -222,6 +223,7 @@ class MessageSender:
                 await MessageSender.send_media_group(query, audio_files, is_photo=False)
                 if part.get_link():
                     await query.message.reply_text(part.get_link())
+                return
             except Exception as e:
                 await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
         text_content = part.get_text()

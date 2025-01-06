@@ -44,13 +44,13 @@ class LoadManager:
         return information_parts
 
     def load_points(self, excursion_id: int) -> List[Point]:
-        """Loads points related to a specific excursion."""
+        """Loads points related to a specific element."""
         data = self.points_collection.find({"parent_id": excursion_id})
         points = []
         for point_data in data:
-            extra_parts = self.load_information_part(point_data["point_id"])
+            extra_parts = self.load_information_part(point_data["id"])
             point = Point(
-                point_id=point_data.get("point_id", 0),
+                point_id=point_data.get("id", 0),
                 excursion_id=excursion_id,
                 part_name=point_data.get("name", DEFAULT_EXCURSION_NAME),
                 address=point_data.get("address", DEFAULT_ADDRESS),
@@ -77,9 +77,9 @@ class LoadManager:
         excursions = {}
         data = self.excursions_collection.find()
         for excursion_data in data:
-            points = self.load_points(excursion_data["point_id"])
+            points = self.load_points(excursion_data["id"])
             excursion = Excursion(
-                excursion_id=excursion_data["point_id"],
+                excursion_id=excursion_data["id"],
                 name=excursion_data.get("name", DEFAULT_EXCURSION_NAME),
                 points=points,
                 is_paid=excursion_data.get("is_paid", False),
@@ -90,9 +90,9 @@ class LoadManager:
                 duration=excursion_data.get("duration", 0),
                 visitors=excursion_data.get("visitors", []),
             )
-            print(f"Loaded excursion: {excursion.to_dict()}")
+            print(f"Loaded element: {excursion.to_dict()}")
             if excursion.get_id() > Excursion.excursion_id:
-                Excursion.point_id = excursion.get_id()
+                Excursion.excursion_id = excursion.get_id()
             excursions[excursion.get_name()] = excursion
         print(f"Loaded {len(excursions)} excursions from MongoDB.")
         return excursions
@@ -119,9 +119,9 @@ class LoadManager:
 
     def save_information_part(self, information_part: InformationPart) -> None:
         """Saves or updates an information part in the MongoDB collection."""
-        existing_part = self.information_parts_collection.find_one({"point_id": information_part.get_id()})
+        existing_part = self.information_parts_collection.find_one({"id": information_part.get_id()})
         if existing_part:
-            self.information_parts_collection.replace_one({"point_id": information_part.get_id()},
+            self.information_parts_collection.replace_one({"id": information_part.get_id()},
                                                           information_part.to_dict())
         else:
             self.information_parts_collection.insert_one(information_part.to_dict())
@@ -129,22 +129,22 @@ class LoadManager:
 
     def save_point(self, point: Point) -> None:
         """Saves or updates a point in the MongoDB collection."""
-        existing_point = self.points_collection.find_one({"point_id": point.get_id()})
+        existing_point = self.points_collection.find_one({"id": point.get_id()})
         if existing_point:
-            self.points_collection.replace_one({"point_id": point.get_id()}, point.to_dict())
+            self.points_collection.replace_one({"id": point.get_id()}, point.to_dict())
         else:
             self.points_collection.insert_one(point.to_dict())
         for extra_part in point.get_extra_information_points():
             self.save_information_part(extra_part)
 
     def save_excursion(self, excursion: Excursion) -> None:
-        """Saves or updates an excursion in the MongoDB collection."""
-        existing_excursion = self.excursions_collection.find_one({"point_id": excursion.get_id()})
+        """Saves or updates an element in the MongoDB collection."""
+        existing_excursion = self.excursions_collection.find_one({"id": excursion.get_id()})
         if existing_excursion:
-            self.excursions_collection.replace_one({"point_id": excursion.get_id()}, excursion.to_dict())
+            self.excursions_collection.replace_one({"id": excursion.get_id()}, excursion.to_dict())
         else:
             self.excursions_collection.insert_one(excursion.to_dict())
-        print(f"Saved excursion {excursion.get_name()} to MongoDB. Points: {excursion.points}")
+        print(f"Saved element {excursion.get_name()} to MongoDB. Points: {excursion.points}")
         for point in excursion.get_points():
             self.save_point(point)
 
@@ -158,28 +158,31 @@ class LoadManager:
         print(f"Saved user state for user {user_state.username} to MongoDB.")
 
     def delete_excursion(self, excursion_id: int) -> None:
-        """Deletes an excursion and all its related points and information parts."""
-        points = self.points_collection.find({"excursion_id": excursion_id})
+        """Deletes an element and all its related points and information parts."""
+        points = self.points_collection.find({"parent_id": excursion_id})
         for point in points:
-            self.delete_point(point["point_id"])
-        self.excursions_collection.delete_one({"point_id": excursion_id})
-        print(f"Deleted excursion with point_id {excursion_id} from MongoDB.")
+            self.delete_point(point["id"])
+        self.excursions_collection.delete_one({"id": excursion_id})
+        print(f"Deleted element with id {excursion_id} from MongoDB.")
 
     def delete_point(self, point_id: int) -> None:
         """Deletes a point and all its related information parts."""
-        self.information_parts_collection.delete_many({"point_id": point_id})
-        self.points_collection.delete_one({"point_id": point_id})
-        print(f"Deleted point with point_id {point_id} from MongoDB.")
+        extra_points = self.information_parts_collection.find({"parent_id": point_id})
+        for extra_part in extra_points:
+            self.delete_point(extra_part["id"])
+        # self.information_parts_collection.delete_many({"parent_id": point_id})
+        self.points_collection.delete_one({"id": point_id})
+        print(f"Deleted point with id {point_id} from MongoDB.")
 
     def delete_extra_information_point(self, extra_point_id: int) -> None:
         """Deletes an extra information point"""
-        self.information_parts_collection.delete_one({"point_id": extra_point_id})
-        print(f"Deleted extra information point with point_id {extra_point_id} from MongoDB.")
+        self.information_parts_collection.delete_one({"id": extra_point_id})
+        print(f"Deleted extra information point with id {extra_point_id} from MongoDB.")
 
     def delete_user_state(self, user_id: int) -> None:
         """Deletes a user state from the MongoDB collection."""
         self.user_states_collection.delete_one({"user_id": user_id})
-        print(f"Deleted user state with point_id {user_id} from MongoDB.")
+        print(f"Deleted user state with id {user_id} from MongoDB.")
 
     def clear_database(self) -> None:
         """Clears the MongoDB collection."""
@@ -187,7 +190,6 @@ class LoadManager:
         self.information_parts_collection.delete_many({})
         self.points_collection.delete_many({})
         self.excursions_collection.delete_many({})
-
 
     # JSON USAGE
     #
@@ -251,10 +253,10 @@ class LoadManager:
     #             points.append(point)
     #
     #         # Create the Excursion object and add it to the excursions list
-    #         excursion = Excursion(excursion_id=excursion_id, name=excursion_name, points=points,
+    #         element = Excursion(excursion_id=excursion_id, name=excursion_name, points=points,
     #                               is_paid=is_paid_excursion, likes_num=likes_num,
     #                               dislikes_num=dislikes_num, is_draft=is_draft_excursion, views_num=visitors_data)
-    #         excursions[excursion_name] = excursion
+    #         excursions[excursion_name] = element
     #     print("Loaded {} excursions".format(len(excursions)))
     #
     #     return excursions
@@ -292,14 +294,14 @@ class LoadManager:
     #         return {}
     #
     # @staticmethod
-    # def save_excursion_data(excursion: Excursion) -> None:
+    # def save_excursion_data(element: Excursion) -> None:
     #     """Saves or updates a components' information in the JSON file."""
     #     try:
     #
     #         # If the JSON file does not exist, create it with the new components
     #         if not os.path.exists(EXCURSIONS_INFO_PATH):
     #             with open(EXCURSIONS_INFO_PATH, "w", encoding="utf-8") as file:
-    #                 data = [excursion.to_dict()]
+    #                 data = [element.to_dict()]
     #                 json.dump(data, file, ensure_ascii=False, indent=4)
     #             return
     #
@@ -309,18 +311,18 @@ class LoadManager:
     #
     #         # Check if the components already exists; if so, update it
     #         for index, existing_excursion in enumerate(data):
-    #             if existing_excursion["name"] == excursion.name:
-    #                 data[index] = excursion.to_dict()  # Update existing entry
+    #             if existing_excursion["name"] == element.name:
+    #                 data[index] = element.to_dict()  # Update existing entry
     #                 break
     #         else:
     #             # If the components is not found, add it as a new entry
-    #             data.append(excursion.to_dict())
+    #             data.append(element.to_dict())
     #
     #         # Write the updated data back to the JSON file
     #         with open(EXCURSIONS_INFO_PATH, "w", encoding="utf-8") as file:
     #             json.dump(data, file, ensure_ascii=False, indent=4)
     #
-    #         print(f"Saved {excursion.get_name()} components")
+    #         print(f"Saved {element.get_name()} components")
     #
     #     except Exception as e:
     #         print(f"Error saving components data: {e}")
@@ -377,4 +379,4 @@ class LoadManager:
     #         print(f"Instance with point_id {excursion_id} deleted.")
     #
     #     except Exception as e:
-    #         print(f"Error deleting excursion {excursion_id} data: {e}")
+    #         print(f"Error deleting element {excursion_id} data: {e}")

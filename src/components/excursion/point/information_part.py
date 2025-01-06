@@ -23,8 +23,8 @@ class InformationPart(StatsObject):
         self.id = information_point_id
         self.parent_id = parent_id
         self.part_name = part_name
-        self.photos = photos
-        self.audio = audio
+        self.photos = photos if photos is not None else []
+        self.audio = audio if audio is not None else []
         self.text = text
         self.link = link
 
@@ -77,7 +77,7 @@ class InformationPart(StatsObject):
         """Convert the information part to a dictionary for data serialization."""
         information_part_dict = super().to_dict()
         additional_data = {
-            "point_id": self.id,
+            "id": self.id,
             "parent_id": self.parent_id,
             NAME_FIELD: self.part_name,
             INFORMATION_PART_PHOTOS_FIELD: self.photos,

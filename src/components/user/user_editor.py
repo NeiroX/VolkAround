@@ -24,6 +24,7 @@ class UserEditor:
         self.return_to_previous_menu_message = None
         self.files_sending_mode = False
         self.files_buffer = list()
+        self.loading_file_index = 0
 
     def enable_editing_mode(self, editing_object: Excursion | InformationPart | Point, return_callback: str = None,
                             return_message: str = None,
@@ -41,6 +42,7 @@ class UserEditor:
         self.return_message = return_message
         self.return_to_previous_menu_callback = return_to_previous_menu_callback
         self.return_to_previous_menu_message = return_to_previous_menu_message
+        self.loading_file_index = 0
 
     def disable_editing_mode(self):
         self.is_editing_mode = False
@@ -56,6 +58,7 @@ class UserEditor:
         self.return_to_previous_menu_message = None
         self.files_sending_mode = False
         self.files_buffer = list()
+        self.loading_file_index = 0
 
     def get_extra_information_point_id(self) -> int:
         return self.extra_information_point_id
@@ -69,8 +72,15 @@ class UserEditor:
     def get_files_sending_mode(self) -> bool:
         return self.files_sending_mode
 
+    def get_loading_file_index(self) -> int:
+        return self.loading_file_index
+
+    def increase_loading_file_index(self) -> None:
+        self.loading_file_index += 1
+
     def clear_files_buffer(self) -> None:
         self.files_buffer = list()
+        self.loading_file_index = 0
 
     def get_files_buffer(self) -> List[str]:
         return self.files_buffer
@@ -139,6 +149,9 @@ class UserEditor:
             callback = self.return_to_previous_menu_callback
             if self.point_id and not self.extra_information_point_id:
                 callback += f"{self.point_id}"
+            elif self.point_id and self.extra_information_point_id:
+                callback += f"{self.point_id}_{self.extra_information_point_id}"
+            print(f"Previous menu button callback: {callback}")
             return InlineKeyboardButton(self.return_to_previous_menu_message, callback_data=callback)
         return None
 

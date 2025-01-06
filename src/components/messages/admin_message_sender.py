@@ -4,6 +4,7 @@ from typing import List, Union
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.information_part import InformationPart
 from src.components.excursion.point.point import Point
+from src.components.excursion.stats_object import StatsObject
 from src.components.messages.message_sender import MessageSender
 from src.constants import *
 from src.data.s3bucket import s3_fetch_file
@@ -88,15 +89,15 @@ class AdminMessageSender:
             await sender.message.reply_text(message, reply_markup=reply_markup)
 
     @staticmethod
-    async def send_excursion_stats(update: Update, excursion: Excursion) -> None:
+    async def send_object_stats(update: Update, element: StatsObject) -> None:
         sender = AdminMessageSender.get_message_sender(update)
-        if excursion and sender:
-            message = (f"Текущая экскурсия: {excursion.get_name()}\n"
-                       f"Количество просмотров экскурсий: {excursion.get_views_num()}\n"
-                       f"{PERSON_EMOJI} Количество уникальных пользователей прошедших экскурсию:"
-                       f" {excursion.get_unique_visitors_num()}\n"
-                       f"{LIKE_EMOJI} Количество лайков: {excursion.get_likes_num()}\n"
-                       f"{DISLIKE_EMOJI} Количество дизлайков: {excursion.get_dislikes_num()}\n")
+        if element and sender:
+            message = (f"Название текущего элемента: {element.get_name()}\n"
+                       f"Количество просмотров: {element.get_views_num()}\n"
+                       f"{PERSON_EMOJI} Количество уникальных прошедших пользователей:"
+                       f" {element.get_unique_visitors_num()}\n"
+                       f"{LIKE_EMOJI} Количество лайков: {element.get_likes_num()}\n"
+                       f"{DISLIKE_EMOJI} Количество дизлайков: {element.get_dislikes_num()}\n")
             keyboard = [[InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await sender.message.reply_text(message, reply_markup=reply_markup)
@@ -122,8 +123,13 @@ class AdminMessageSender:
         if sender:
             keyboard = [[InlineKeyboardButton(SKIP_FIELD_BUTTON, callback_data=SKIP_FIELD_CALLBACK)]]
             if not one_photo:
-                keyboard.append([InlineKeyboardButton(DISABLE_SENDING_FILES_BUTTON,
-                                                      callback_data=DISABLE_SENDING_FILES_CALLBACK)])
+                keyboard.append([InlineKeyboardButton(ADD_TO_EXISTING_FILES_BUTTON,
+                                                      callback_data=ADD_TO_EXISTING_FILES_CALLBACK)])
+                keyboard.append([InlineKeyboardButton(REPLACE_EXISTING_FILES_BUTTON,
+                                                      callback_data=REPLACE_EXISTING_FILES_CALLBACK)])
+                if current_photos:
+                    keyboard.append([InlineKeyboardButton(DELETE_EXISTING_FILES_BUTTON,
+                                                          callback_data=DELETE_EXISTING_FILES_CALLBACK)])
             reply_markup = InlineKeyboardMarkup(keyboard)
             await sender.message.reply_text(field_message, reply_markup=reply_markup)
 
@@ -135,8 +141,13 @@ class AdminMessageSender:
         sender = AdminMessageSender.get_message_sender(update)
         if sender:
             keyboard = [[InlineKeyboardButton(SKIP_FIELD_BUTTON, callback_data=SKIP_FIELD_CALLBACK)],
-                        [InlineKeyboardButton(DISABLE_SENDING_FILES_BUTTON,
-                                              callback_data=DISABLE_SENDING_FILES_CALLBACK)]]
+                        [InlineKeyboardButton(ADD_TO_EXISTING_FILES_BUTTON,
+                                              callback_data=ADD_TO_EXISTING_FILES_CALLBACK)],
+                        [InlineKeyboardButton(REPLACE_EXISTING_FILES_BUTTON,
+                                              callback_data=REPLACE_EXISTING_FILES_CALLBACK)]]
+            if current_audios:
+                keyboard.append([InlineKeyboardButton(DELETE_EXISTING_FILES_BUTTON,
+                                                      callback_data=DELETE_EXISTING_FILES_CALLBACK)])
             reply_markup = InlineKeyboardMarkup(keyboard)
             await sender.message.reply_text(field_message, reply_markup=reply_markup)
 
@@ -184,14 +195,20 @@ class AdminMessageSender:
                                                               callback_data=f"{EDIT_EXTRA_POINT_CALLBACK}_"
                                                                             f"{point.get_id()}_"
                                                                             f"{extra_point.get_id()}")])
+                keyboard.append(
+                    [InlineKeyboardButton(STATS_BUTTON, callback_data=f"{POINT_STATS_CALLBACK}{point.get_id()}")])
+
                 keyboard.append([InlineKeyboardButton(EDIT_POINT_BUTTON,
                                                       callback_data=f"{EDIT_POINT_FIELDS_CALLBACK}{point.get_id()}")])
+
                 keyboard.append([InlineKeyboardButton(ADD_EXTRA_POINT_BUTTON,
                                                       callback_data=f"{ADD_EXTRA_POINT_CALLBACK}{point.get_id()}")])
                 keyboard.append([InlineKeyboardButton(DELETE_POINT_BUTTON,
                                                       callback_data=f"{DELETE_POINT_CALLBACK}{point.get_id()}")])
             else:
                 message = EDIT_EXTRA_POINT_MESSAGE
+                keyboard.append([InlineKeyboardButton(STATS_BUTTON,
+                                                      callback_data=f"{EXTRA_POINT_STATS_CALLBACK}{point_id}_{point.get_id()}")])
                 keyboard.append(
                     [InlineKeyboardButton(EDIT_EXTRA_POINT_BUTTON,
                                           callback_data=f"{EDIT_EXTRA_POINT_FIELDS_CALLBACK}{point_id}_{point.get_id()}")])

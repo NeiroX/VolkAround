@@ -56,6 +56,8 @@ TIME_EMOJI = u"\u231B"  # ⌛
 WARNING_EMOJI = u"\U0001F7E1"  # 🟡
 STOP_EMOJI = u"\U0001F6D1"  # 🛑
 DANGER_WARNING_EMOJI = u"\U00002620"  # ☠️
+REPLACE_EMOJI = u"\u267B\ufe0f"  # ♻️
+ADD_EMOJI = u"\U0001F4E5"  # 📥
 
 # Paths
 AUDIO_PATH = os.path.abspath("media/audio")
@@ -152,10 +154,13 @@ EDIT_POINTS_BUTTON = f'{EDITING_EMOJI} Редактировать точки {LO
 CHANGE_POINTS_ORDER_BUTTON = f'{CHANGE_ORDER_EMOTIONS} Редактировать порядок'
 DELETE_POINT_BUTTON = f"{DELETE_EMOJI} Удалить точку"
 DELETE_EXTRA_POINT_BUTTON = f"{DELETE_EMOJI} Удалить подтему"
-EXCURSION_STATS_BUTTON = f"{STATS_EMOJI} Статистика"
+STATS_BUTTON = f"{STATS_EMOJI} Статистика"
 EXCURSION_SUMMARY_BUTTON = f"{SUMMARY_EMOJI} Обзор экскурсии"
 DELETE_EXCURSION_BUTTON = f"{DELETE_EMOJI} Удалить экскурсию"
-DISABLE_SENDING_FILES_BUTTON = f"{FINISH_EMOJI} Закончить отправку файлов"
+# DISABLE_SENDING_FILES_BUTTON = f"{FINISH_EMOJI} Закончить отправку файлов"
+REPLACE_EXISTING_FILES_BUTTON = f"{REPLACE_EMOJI} Заменить текущие файлы"
+ADD_TO_EXISTING_FILES_BUTTON = f"{ADD_EMOJI} Добавить к текущим"
+DELETE_EXISTING_FILES_BUTTON = f"{DELETE_EMOJI} Удалить текущие файлы"
 RETURN_TO_PREVIOUS_MENU_STATE = f"{BACK_ARROW_EMOJI} Вернуться обратно"
 DELETE_ALL_COLLECTIONS_BUTTON = f"{DELETE_EMOJI} Удалить все"
 APPROVE_DELETING_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю удаление"
@@ -169,7 +174,7 @@ MESSAGE_TO_VOLK_URL = "https://t.me/ZeevVolk"
 MESSAGE_TO_DEVELOPER_URL = "https://t.me/ivanezox"
 
 # Fields messages
-EXCURSION_NAME_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите название экскурсии. Если хотите оставить предыдущее значение, пропустите поле"
+EXCURSION_NAME_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите уникальное название экскурсии. Если хотите оставить предыдущее значение, пропустите поле"
 EXCURSION_PAYMENT_REQUIREMENT_FIELD_MESSAGE = f"{QUESTION_EMOJI} Платная экскурсия?"
 EXCURSION_DURATION_FIELD_MESSAGE = (f"{TEXT_EMOJI}{CHANGE_ORDER_EMOTIONS} Введите длительность экскурсии в минутах."
                                     f" Если хотите оставить предыдущее значение, пропустите поле.\n"
@@ -243,7 +248,18 @@ EDIT_EXTRA_POINT_FIELDS_CALLBACK = "edit_fields_extra_point_"
 DELETE_EXTRA_POINT_CALLBACK = "delete_extra_point_"
 DELETE_EXCURSION_CALLBACK = "delete_excursion"
 EXCURSION_STATS_CALLBACK = "excursion_stats"
+POINT_STATS_CALLBACK = "point_stats_"
+EXTRA_POINT_STATS_CALLBACK = "extra_point_stats_"
 EXCURSION_SUMMARY_CALLBACK = "excursion_summary"
-DISABLE_SENDING_FILES_CALLBACK = "disable_sending_files"
+# DISABLE_SENDING_FILES_CALLBACK = "disable_sending_files"
+ADD_TO_EXISTING_FILES_CALLBACK = "add_to_existing_files"
+REPLACE_EXISTING_FILES_CALLBACK = "replace_existing_files"
+DELETE_EXISTING_FILES_CALLBACK = "delete_existing_files"
 DELETE_ALL_COLLECTIONS_CALLBACK = "delete_all_collections"
 APPROVE_DELETING_CALLBACK = "approve_deleting"
+
+# Bunches of callbacks
+FILES_CALLBACKS = {SKIP_FIELD_CALLBACK,
+                   REPLACE_EXISTING_FILES_CALLBACK,
+                   ADD_TO_EXISTING_FILES_CALLBACK,
+                   DELETE_EXISTING_FILES_CALLBACK}

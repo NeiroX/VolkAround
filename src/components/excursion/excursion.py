@@ -63,7 +63,7 @@ class Excursion(StatsObject):
         """Convert the components to a dictionary for JSON serialization."""
         excursion_to_dict = super().to_dict()
         additional_data = {
-            "point_id": self.id,
+            "id": self.id,
             NAME_FIELD: self.name,
             "is_draft": self.is_draft,
             EXCURSION_IS_PAID_FIELD: self.is_paid,

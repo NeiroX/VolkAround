@@ -347,20 +347,28 @@ class Bot:
             return  # Exit if not in editing mode
         # Handle the input for the current field
         print(user_state.user_editor.current_field_counter)
+
         if user_state.user_editor.is_counting_started() and not (
-                update.callback_query and update.callback_query.data in {SKIP_FIELD_CALLBACK,
-                                                                         DISABLE_SENDING_FILES_CALLBACK}):
+                update.callback_query and update.callback_query.data in FILES_CALLBACKS):
             field_type = user_state.user_editor.get_current_field_type()
             await self.handle_input(update, field_type, context)
 
-        if update.callback_query and (update.callback_query.data in [SKIP_FIELD_CALLBACK,
-                                                                     DISABLE_SENDING_FILES_CALLBACK]
+        if update.callback_query and (update.callback_query.data in FILES_CALLBACKS
                                       and user_state.user_editor.get_current_field_type() in [
                                           AUDIO_TYPE, PHOTO_TYPE]):
             user_state.user_editor.disable_files_sending()
             files_buffer = user_state.user_editor.get_files_buffer()
-            if update.callback_query.data == DISABLE_SENDING_FILES_CALLBACK:
+            current_data = user_state.user_editor.get_current_field_state()
+            if update.callback_query.data == REPLACE_EXISTING_FILES_CALLBACK:
                 user_state.user_editor.add_editing_result(files_buffer)
+                self._delete_files(current_data)
+            elif update.callback_query.data == ADD_TO_EXISTING_FILES_CALLBACK:
+                if current_data:
+                    files_buffer.extend(current_data)
+                user_state.user_editor.add_editing_result(files_buffer)
+            elif update.callback_query.data == DELETE_EXISTING_FILES_CALLBACK:
+                self._delete_files(current_data)
+                user_state.user_editor.add_editing_result([])
             user_state.user_editor.clear_files_buffer()
         elif user_state.user_editor.get_files_sending_mode():
             return
@@ -400,7 +408,7 @@ class Bot:
         elif field_type == AUDIO_TYPE:
             user_state.user_editor.enable_files_sending()
             current_audio = user_state.user_editor.get_current_field_state()
-            current_state_message = "Текущий аудио файл" if current_audio else "Нет текущего аудио файла"
+            current_state_message = f"{len(current_audio)} аудио файлов"
             print("Sending message to get photos from query")
             await AdminMessageSender.send_form_audio_field_message(update, field_message,
                                                                    current_state_message,
@@ -445,6 +453,7 @@ class Bot:
         # Check if the user is in editing mode and editing the correct field
         if user_state.user_editor.get_editing_mode():
             field_type = user_state.user_editor.get_current_field_type()
+            sender = update if update.message else update.callback_query
             if field_type == AUDIO_TYPE:
                 try:
                     if not update.message.audio:
@@ -465,19 +474,21 @@ class Bot:
                     s3_file_path = save_file_to_s3(temp_file_path, file_name, s3_directory="audio/")
                     # Append file URL to the list of saved files
                     if s3_file_path:
-                        user_state.user_editor.add_editing_result(s3_file_path)
-
+                        user_state.user_editor.increase_loading_file_index()
+                        user_state.user_editor.add_file_to_files_buffer(s3_file_path)
+                        await sender.message.reply_text(
+                            f"Аудио {user_state.user_editor.get_loading_file_index()} загружено {CHECK_MARK_EMOJI}")
                     # Clean up the temporary file
                     os.remove(temp_file_path)
 
                 except Exception as e:
                     print(f"Failed to handle audio: {e}")
-                    await update.message.reply_text("Ошибка загрузки файлов.")
+                    await sender.message.reply_text("Ошибка при обработке присланных фотографий.")
 
     async def handle_photo_field_input(self, update: Update, context: ContextTypes, one_photo: bool = False):
         # Fetch the user's state
         user_state = self.get_user_state(update)
-
+        sender = update if update.message else update.callback_query
         if user_state.user_editor.get_editing_mode():
             print("Handling photo field input")
             field_type = user_state.user_editor.get_current_field_type()
@@ -502,17 +513,19 @@ class Bot:
                     s3_file_path = save_file_to_s3(tmp_file_name, file_name, s3_directory="images/")
                     # Append file URL to the list of saved files
                     if s3_file_path:
+                        user_state.user_editor.increase_loading_file_index()
                         if not one_photo:
                             user_state.user_editor.add_file_to_files_buffer(s3_file_path)
                         else:
                             user_state.user_editor.add_editing_result(s3_file_path)
-
+                        await sender.message.reply_text(
+                            f"Фото {user_state.user_editor.get_loading_file_index()} загружено {CHECK_MARK_EMOJI}")
                     # Clean up the temporary file
                     os.remove(tmp_file_name)
 
                 except Exception as e:
                     print(f"Failed to handle photos: {e}")
-                    await update.message.reply_text("Ошибка при обработке присланных фотографий.")
+                    await sender.message.reply_text("Ошибка при обработке присланных фотографий.")
 
     # def upload_file(update: Update, context: CallbackContext) -> None:
     #     attachment = update.message.effective_attachment
@@ -674,11 +687,29 @@ class Bot:
                         await self.handle_next_field(update, context)
                         return
 
-    async def send_excursion_stats(self, update: Update, context: ContextTypes):
+    async def send_stats(self, update: Update, context: ContextTypes):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         current_excursion = user_state.get_current_excursion()
-        await AdminMessageSender.send_excursion_stats(update, current_excursion)
+        callback_data = update.callback_query.data
+        if callback_data.startswith(EXCURSION_STATS_CALLBACK):
+            await AdminMessageSender.send_object_stats(update, current_excursion)
+        elif callback_data.startswith(POINT_STATS_CALLBACK):
+            point_id = int(callback_data.split("_")[-1])
+            for point in current_excursion.get_points():
+                if point.get_id() == point_id:
+                    await AdminMessageSender.send_object_stats(update, point)
+                    return
+        elif callback_data.startswith(POINT_STATS_CALLBACK):
+            point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
+            point_id = int(point_id)
+            extra_point_id = int(extra_point_id)
+            for point in current_excursion.get_points():
+                if point.get_id() == point_id:
+                    for extra_point in point.get_extra_information_points():
+                        if extra_point.get_id() == extra_point_id:
+                            await AdminMessageSender.send_object_stats(update, extra_point)
+                            return
 
     async def send_excursion_summary(self, update: Update, context: ContextTypes):
         user_state = self.get_user_state(update)
@@ -821,7 +852,7 @@ class Bot:
         # Change visibility
         self.application.add_handler(CallbackQueryHandler(self.change_chosen_excursion_visibility,
                                                           pattern=f"^{PUBLISH_CHOSEN_EXCURSION_CALLBACK}"))
-        #  Add excursion
+        #  Add element
         self.application.add_handler(CallbackQueryHandler(self.add_excursion, pattern=f"^{ADD_EXCURSION_CALLBACK}$"))
 
         # Handling fields
@@ -861,15 +892,21 @@ class Bot:
         self.application.add_handler(
             CallbackQueryHandler(self.edit_extra_point_fields, pattern=f"^{EDIT_EXTRA_POINT_FIELDS_CALLBACK}"))
         self.application.add_handler(
-            CallbackQueryHandler(self.send_excursion_stats, pattern=f"^{EXCURSION_STATS_CALLBACK}$"))
+            CallbackQueryHandler(self.send_stats,
+                                 pattern=f"^({EXCURSION_STATS_CALLBACK}|{POINT_STATS_CALLBACK}|"
+                                         f"{EXTRA_POINT_STATS_CALLBACK})"))
         self.application.add_handler(
             CallbackQueryHandler(self.send_excursion_summary, pattern=f"^{EXCURSION_SUMMARY_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self.change_points_order, pattern=f"^{CHANGE_POINTS_ORDER_CALLBACK}$"))
         self.application.add_handler(
-            CallbackQueryHandler(self.handle_next_field, pattern=f"^{DISABLE_SENDING_FILES_CALLBACK}$"))
-
+            CallbackQueryHandler(self.handle_next_field, pattern=f"^{ADD_TO_EXISTING_FILES_CALLBACK}$"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.handle_next_field, pattern=f"^{REPLACE_EXISTING_FILES_CALLBACK}$"))
+        self.application.add_handler(
+            CallbackQueryHandler(self.handle_next_field, pattern=f"^{DELETE_EXISTING_FILES_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self._handle_deleting, pattern=f"^{APPROVE_DELETING_CALLBACK}"))
+        self
 
         self.application.run_polling()
