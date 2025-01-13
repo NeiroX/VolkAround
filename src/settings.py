@@ -6,9 +6,16 @@ load_dotenv()
 # Telegram TOKEN
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-# Database settings
+# Mongo and Database settings
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+# PosgreSQL database settings
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+DATABASE_PORT = os.getenv("DATABASE_PORT")
+
 AWS_SERVER_PUBLIC_KEY = os.getenv('AWS_SERVER_PUBLIC_KEY')
 AWS_SERVER_SECRET_KEY = os.getenv('AWS_SERVER_SECRET_KEY')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')

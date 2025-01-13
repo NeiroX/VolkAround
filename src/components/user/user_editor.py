@@ -23,6 +23,7 @@ class UserEditor:
         self.return_to_previous_menu_callback = None
         self.return_to_previous_menu_message = None
         self.files_sending_mode = False
+        self.editing_specific_field = False
         self.files_buffer = list()
         self.loading_file_index = 0
 
@@ -57,6 +58,7 @@ class UserEditor:
         self.return_to_previous_menu_callback = None
         self.return_to_previous_menu_message = None
         self.files_sending_mode = False
+        self.editing_specific_field = False
         self.files_buffer = list()
         self.loading_file_index = 0
 
@@ -75,6 +77,9 @@ class UserEditor:
     def get_loading_file_index(self) -> int:
         return self.loading_file_index
 
+    def get_editing_specific_field(self) -> bool:
+        return self.editing_specific_field
+
     def increase_loading_file_index(self) -> None:
         self.loading_file_index += 1
 
@@ -91,6 +96,12 @@ class UserEditor:
 
     def enable_order_changing(self) -> None:
         self.is_order_changing = True
+
+    def enable_editing_specific_field(self) -> None:
+        self.editing_specific_field = True
+
+    def disable_editing_specific_field(self) -> None:
+        self.editing_specific_field = False
 
     def disable_order_changing(self) -> None:
         self.is_order_changing = False
@@ -128,6 +139,7 @@ class UserEditor:
         print(field_name)
         print(self.editing_result)
         self.editing_result[field_name] = result
+        print(self.editing_result)
 
     def get_current_field_state(self) -> Any:
         current_field_name = self.get_current_field_name()

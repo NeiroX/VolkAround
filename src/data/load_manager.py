@@ -13,7 +13,7 @@ from src.settings import DATABASE_URL, DATABASE_NAME
 from src.components.user.user_state import UserState
 
 
-class LoadManager:
+class MongoLoadManager:
     def __init__(self) -> None:
         self.client = MongoClient(DATABASE_URL)
         self.db = self.client[DATABASE_NAME]

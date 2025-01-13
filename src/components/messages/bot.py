@@ -1,9 +1,11 @@
 from typing import List, Union
+from urllib.parse import urlparse
 
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, filters, \
     MessageHandler
 
+from src.data.postgres_data_loader import PostgresLoadManager
 from src.data.s3bucket import save_file_to_s3, s3_delete_file
 
 from src.components.excursion.point.information_part import InformationPart
@@ -12,7 +14,7 @@ from src.components.messages.message_sender import MessageSender
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.point import Point
 from src.components.user.user_state import UserState
-from src.data.load_manager import LoadManager
+from src.data.load_manager import MongoLoadManager
 from src.constants import *
 
 
@@ -21,14 +23,15 @@ def get_user_id_by_update(update: Update) -> int:
 
 
 # TODO: Finish menu transitions
+# TODO: Check link format
 # TODO: Add statistics for points and sub themes
 class Bot:
     """The main bot class coordinating everything."""
 
-    def __init__(self, token):
+    def __init__(self, token, session):
         self.application = Application.builder().token(token).build()
-
-        self.data_loader = LoadManager()
+        self.session = session
+        self.data_loader = PostgresLoadManager(session)
         self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
         self.excursions = self.data_loader.load_excursions()  # Dictionary of all available excursions
 
@@ -40,16 +43,16 @@ class Bot:
             is_admin = True if (username is not None and username.lower() in ADMINS_LIST) else False
             self.user_states[user_id] = UserState(username=username, user_id=user_id, is_admin=is_admin)
             self.data_loader.save_user_state(self.user_states[user_id])
-        elif username is not None and username.lower() in ADMINS_LIST:
-            self.user_states[user_id].is_admin = True
-            self.data_loader.save_user_state(self.user_states[user_id])
+        # elif username is not None and username.lower() in ADMINS_LIST:
+        #     self.user_states[user_id].is_admin = True
+        #     self.data_loader.save_user_state(self.user_states[user_id])
         return self.user_states[user_id]
 
     def sync_data(self) -> None:
         self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
         self.excursions = self.data_loader.load_excursions()
 
-    async def start(self, update: Update, context: ContextTypes):
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the /start command."""
         user_state = self.get_user_state(update)
         user_state.reset_current_excursion()  # Reset any ongoing current_excursion for a fresh start
@@ -57,7 +60,7 @@ class Bot:
         # Explain the available versions
         await MessageSender.send_intro_message(update)
 
-    async def show_excursions(self, update: Update, context: ContextTypes) -> None:
+    async def show_excursions(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Displays the list of available excursions based on user access."""
         query = update.callback_query
         print(query.data)
@@ -80,7 +83,7 @@ class Bot:
         query = update.callback_query
         await MessageSender.send_error_message(query, ACCESS_ERROR, is_alert=True)
 
-    async def choose_excursion(self, update: Update, context: ContextTypes):
+    async def choose_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the selection of a components."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
@@ -138,7 +141,7 @@ class Bot:
         # Send location details (photo, name, address)
         await MessageSender.send_point_location_info(query, point)
 
-    async def handle_arrival(self, update: Update, context: ContextTypes):
+    async def handle_arrival(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the 'I'm Here!' button press."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
@@ -158,7 +161,7 @@ class Bot:
         # Ask the user if they are ready to move on to the next part
         await MessageSender.send_move_on_request(query, point, user_state.get_user_id())
 
-    async def handle_move_on(self, update: Update, context: ContextTypes):
+    async def handle_move_on(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the 'Move On' button press."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
@@ -173,7 +176,7 @@ class Bot:
         else:
             await self.complete_excursion(update, context)
 
-    async def handle_extra_part(self, update: Update, context: ContextTypes):
+    async def handle_extra_part(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the 'Extra Part' button press."""
         query = update.callback_query
         user_state = self.get_user_state(update)
@@ -194,7 +197,7 @@ class Bot:
             await MessageSender.send_part(query, extra_parts[extra_part_id], user_state.mode)
             await MessageSender.send_move_on_request(query, current_point, user_state.get_user_id())
 
-    async def change_mode(self, update: Update, context: ContextTypes):
+    async def change_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Allow the user to change the mode (audio/text) during the current_excursion."""
         user_state = self.get_user_state(update)
 
@@ -207,7 +210,7 @@ class Bot:
         point = user_state.get_point()  # Get the part info for the current part
         await MessageSender.send_part(update.callback_query, point, user_state.mode)
 
-    async def complete_excursion(self, update: Update, context: ContextTypes):
+    async def complete_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the completion of the current_excursion."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
@@ -231,7 +234,7 @@ class Bot:
         await MessageSender.send_feedback_request(query)
         await query.answer()  # Acknowledge the callback_data query
 
-    async def give_feedback(self, update: Update, context: ContextTypes):
+    async def give_feedback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles feedback submission after a components."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
@@ -247,7 +250,7 @@ class Bot:
         self.data_loader.save_excursion(user_state.get_current_excursion())
         await MessageSender.send_feedback_response(query)
 
-    async def change_chosen_excursion_visibility(self, update: Update, context: ContextTypes):
+    async def change_chosen_excursion_visibility(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
 
@@ -262,7 +265,7 @@ class Bot:
                 break
         await AdminMessageSender.send_success_message(update)
 
-    async def add_excursion(self, update: Update, context: ContextTypes):
+    async def add_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         query = update.callback_query
         user_state = self.get_user_state(update)
@@ -274,7 +277,7 @@ class Bot:
         user_state.user_editor.enable_editing_mode(new_excursion)
         await self.handle_next_field(update, context)
 
-    async def add_point(self, update: Update, context: ContextTypes):
+    async def add_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(query)
@@ -286,7 +289,7 @@ class Bot:
                                                    return_to_previous_menu_message=EDIT_POINTS_BUTTON)
         await self.handle_next_field(update, context)
 
-    async def add_extra_information_point(self, update: Update, context: ContextTypes):
+    async def add_extra_information_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
         user_state = self.get_user_state(update)
         point_id = int(query.data.split("_")[-1])
@@ -332,14 +335,15 @@ class Bot:
             self.excursions[excursion_to_save.get_name()] = excursion_to_save
         self.data_loader.save_excursion(excursion_to_save)
 
-    async def handle_messages(self, update: Update, context: ContextTypes):
+    async def handle_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
-        if user_state.user_editor.get_editing_mode() and user_state.user_editor.get_current_field_type() == str:
+        if user_state.user_editor.get_editing_mode() and user_state.user_editor.get_current_field_type() in [str, int,
+                                                                                                             URL_TYPE]:
             await self.handle_next_field(update, context)
         elif user_state.user_editor.get_order_changing():
             await self.handle_order_changing(update, context)
 
-    async def handle_next_field(self, update: Update, context: ContextTypes):
+    async def handle_next_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the current field and moves to the next one."""
         user_state = self.get_user_state(update)
 
@@ -351,6 +355,7 @@ class Bot:
         if user_state.user_editor.is_counting_started() and not (
                 update.callback_query and update.callback_query.data in FILES_CALLBACKS):
             field_type = user_state.user_editor.get_current_field_type()
+            print("Handling input")
             await self.handle_input(update, field_type, context)
 
         if update.callback_query and (update.callback_query.data in FILES_CALLBACKS
@@ -371,6 +376,9 @@ class Bot:
                 user_state.user_editor.add_editing_result([])
             user_state.user_editor.clear_files_buffer()
         elif user_state.user_editor.get_files_sending_mode():
+            return
+
+        if user_state.user_editor.get_editing_specific_field():
             return
 
         # Move to the next field
@@ -414,7 +422,9 @@ class Bot:
                                                                    current_state_message,
                                                                    current_audio)
 
-        elif field_type == str:
+        elif field_type == str or field_type == int or field_type == URL_TYPE:
+            if field_type == URL_TYPE or field_type == int:
+                user_state.user_editor.enable_editing_specific_field()
             current_state = user_state.user_editor.get_current_field_state()
             await AdminMessageSender.send_form_text_field_message(update, field_message,
                                                                   current_state)
@@ -424,13 +434,13 @@ class Bot:
             await AdminMessageSender.send_form_boolean_field_message(update, field_message,
                                                                      "Да" if current_state else "Нет")
 
-    async def handle_input(self, update: Update, field_type, context: ContextTypes):
+    async def handle_input(self, update: Update, field_type, context: ContextTypes.DEFAULT_TYPE):
 
         user_state = self.get_user_state(update)
 
         if user_state.user_editor.get_editing_mode():
-            if field_type == str:
-                self.handle_text_field_input(update)
+            if field_type == str or field_type == int or field_type == URL_TYPE:
+                await self.handle_text_field_input(update)
             elif field_type == bool:
                 self.handle_boolean_field_input(update)
             elif field_type == PHOTO_TYPE or field_type == ONE_PHOTO_TYPE:
@@ -438,15 +448,30 @@ class Bot:
             elif field_type == AUDIO_TYPE:
                 await self.handle_audio_field_input(update, context)
 
-    def handle_text_field_input(self, update: Update):
+    async def handle_text_field_input(self, update: Update):
         user_state = self.get_user_state(update)
         if user_state.user_editor.get_editing_mode():
             print("Handling text field input")
             field_type = user_state.user_editor.get_current_field_type()
-            if field_type == str:
-                user_state.user_editor.add_editing_result(update.message.text)
+            try:
+                if field_type == str:
+                    user_state.user_editor.add_editing_result(update.message.text)
+                elif field_type == int:
+                    user_state.user_editor.add_editing_result(int(update.message.text))
+                    user_state.user_editor.disable_editing_specific_field()
+                elif field_type == URL_TYPE:
+                    parsed = urlparse(update.message.text)
+                    # Ensure the scheme (http, https) and netloc (domain) are present
+                    if bool(parsed.scheme and parsed.netloc):
+                        user_state.user_editor.add_editing_result(update.message.text)
+                        user_state.user_editor.disable_editing_specific_field()
+                    else:
+                        raise ValueError
+            except ValueError as e:
+                print("Error while handling text field input:", e)
+                await update.message.reply_text(WRONG_FORMAT_MESSAGE)
 
-    async def handle_audio_field_input(self, update: Update, context: ContextTypes):
+    async def handle_audio_field_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Fetch the user's state
         user_state = self.get_user_state(update)
 
@@ -485,7 +510,8 @@ class Bot:
                     print(f"Failed to handle audio: {e}")
                     await sender.message.reply_text("Ошибка при обработке присланных фотографий.")
 
-    async def handle_photo_field_input(self, update: Update, context: ContextTypes, one_photo: bool = False):
+    async def handle_photo_field_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                                       one_photo: bool = False):
         # Fetch the user's state
         user_state = self.get_user_state(update)
         sender = update if update.message else update.callback_query
@@ -527,49 +553,6 @@ class Bot:
                     print(f"Failed to handle photos: {e}")
                     await sender.message.reply_text("Ошибка при обработке присланных фотографий.")
 
-    # def upload_file(update: Update, context: CallbackContext) -> None:
-    #     attachment = update.message.effective_attachment
-    #     if isinstance(attachment, list):
-    #         attachment = attachment[-1]
-    #
-    #     # @see https://core.telegram.org/bots/api#getfile
-    #     if attachment.file_size > 20 * 1024 * 1024:
-    #         update.message.reply_html(
-    #             f'<b>File is too big</b>\n\n'
-    #             f'For the moment, <a href="https://core.telegram.org/bots/api#getfile">bots can download files of up to 20MB in size</a>.\n'
-    #         )
-    #         return
-    #
-    #     file = attachment.get_file()
-    #
-    #     def get_original_file_name():
-    #         original_file_name = path.basename(file.file_path)
-    #         if hasattr(attachment, 'file_name'):
-    #             original_file_name = attachment.file_name
-    #         return original_file_name
-    #
-    #     file_name = get_original_file_name()
-    #     if update.message.caption is not None:
-    #         if update.message.caption.strip():
-    #             # Trim spaces and remove leading slash
-    #             file_name = update.message.caption.strip().lstrip('/')
-    #             if file_name.endswith('/'):
-    #                 file_name += get_original_file_name()
-    #
-    #     mime_type = mimetypes.MimeTypes().guess_type(file_name)[0]
-    #     if hasattr(attachment, 'mime_type'):
-    #         mime_type = attachment.mime_type
-    #
-    #     tmp_file_name = f'{TEMP_PATH}/{uuid.uuid4()}'
-    #     file = File.download(file, tmp_file_name)
-    #     s3_upload_file(file, file_name, mime_type, 'public-read')  # Make public by default
-    #     try:
-    #         os.unlink(tmp_file_name)
-    #     except Exception as e:
-    #         logger.error(e)
-    #     s3_file_path = s3_get_obj_url(file_name)
-    #     update.message.reply_text(text=s3_file_path)
-
     def handle_boolean_field_input(self, update: Update):
         user_state = self.get_user_state(update)
         if user_state.user_editor.get_editing_mode():
@@ -579,7 +562,7 @@ class Bot:
             elif data == "no":
                 user_state.user_editor.add_editing_result(False)
 
-    async def edit_point(self, update: Update, context: ContextTypes):
+    async def edit_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         point_id = int(update.callback_query.data.split("_")[-1])
         current_excursion = user_state.get_current_excursion()
@@ -588,13 +571,13 @@ class Bot:
                 await AdminMessageSender.send_point_edit_message(update.callback_query, point)
                 return
 
-    async def edit_points(self, update: Update, context: ContextTypes):
+    async def edit_points(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         await AdminMessageSender.send_points_list(update.callback_query,
                                                   user_state.get_current_excursion().get_points())
 
-    async def edit_excursion(self, update: Update, context: ContextTypes):
+    async def edit_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         current_excursion = user_state.get_current_excursion()
         print(current_excursion.get_name())
@@ -602,7 +585,7 @@ class Bot:
         user_state.user_editor.enable_editing_mode(user_state.get_current_excursion())
         await self.handle_next_field(update, context)
 
-    async def edit_point_fields(self, update: Update, context: ContextTypes):
+    async def edit_point_fields(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         point_id = int(update.callback_query.data.split("_")[-1])
@@ -655,7 +638,7 @@ class Bot:
                         await AdminMessageSender.send_success_message(update, previous_menu_button=previous_menu_button)
                         return
 
-    async def edit_extra_point(self, update: Update, context: ContextTypes):
+    async def edit_extra_point(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
@@ -669,7 +652,7 @@ class Bot:
                                                                          True, point_id)
                         return
 
-    async def edit_extra_point_fields(self, update: Update, context: ContextTypes):
+    async def edit_extra_point_fields(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
@@ -687,7 +670,7 @@ class Bot:
                         await self.handle_next_field(update, context)
                         return
 
-    async def send_stats(self, update: Update, context: ContextTypes):
+    async def send_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         current_excursion = user_state.get_current_excursion()
@@ -711,13 +694,13 @@ class Bot:
                             await AdminMessageSender.send_object_stats(update, extra_point)
                             return
 
-    async def send_excursion_summary(self, update: Update, context: ContextTypes):
+    async def send_excursion_summary(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         current_excursion = user_state.get_current_excursion()
         await AdminMessageSender.send_excursion_summary_message(update, current_excursion)
 
-    async def change_points_order(self, update: Update, context: ContextTypes):
+    async def change_points_order(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         current_excursion = user_state.get_current_excursion()
@@ -728,7 +711,7 @@ class Bot:
         await AdminMessageSender.send_form_text_field_message(update, CHANGING_ORDER_MESSAGE,
                                                               current_state_message, skip_button=False)
 
-    async def handle_order_changing(self, update: Update, context: ContextTypes):
+    async def handle_order_changing(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         if user_state.user_editor.get_order_changing():
             print("Changing order")
@@ -779,7 +762,7 @@ class Bot:
             self.excursions.clear()
             await AdminMessageSender.send_success_message(update)
 
-    async def _handle_deleting(self, update: Update, context: ContextTypes):
+    async def _handle_deleting(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         await MessageSender.delete_previous_buttons(update.callback_query)
         if user_state.does_have_admin_access():
@@ -793,7 +776,7 @@ class Bot:
             elif callback_data.startswith(DELETE_ALL_COLLECTIONS_CALLBACK):
                 await self.clear_data(update)
 
-    async def _send_approving_message(self, update: Update, context: ContextTypes):
+    async def _send_approving_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         if user_state.does_have_admin_access():
             callback = update.callback_query.data
@@ -823,7 +806,7 @@ class Bot:
                 print(f"Error deleting {file_path}: {e}")
 
     @staticmethod
-    async def move_to_excursions_list(update: Update, context: ContextTypes):
+    async def move_to_excursions_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles movement to components list"""
         await MessageSender.send_transition_warning(update)
 
@@ -907,6 +890,5 @@ class Bot:
             CallbackQueryHandler(self.handle_next_field, pattern=f"^{DELETE_EXISTING_FILES_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self._handle_deleting, pattern=f"^{APPROVE_DELETING_CALLBACK}"))
-        self
 
         self.application.run_polling()

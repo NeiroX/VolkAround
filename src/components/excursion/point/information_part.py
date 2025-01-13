@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 from src.components.excursion.stats_object import StatsObject
 from src.components.field import Field
 from src.constants import *
+from src.database.models import InformationPartModel
 
 
 class InformationPart(StatsObject):
@@ -67,7 +68,7 @@ class InformationPart(StatsObject):
         """Returns the fields for the information part."""
         return [
             Field(INFORMATION_PART_NAME_FIELD_MESSAGE, NAME_FIELD, str),
-            Field(INFORMATION_PART_LINK_FIELD_MESSAGE, INFORMATION_PART_LINK_FIELD, str),
+            Field(INFORMATION_PART_LINK_FIELD_MESSAGE, INFORMATION_PART_LINK_FIELD, URL_TYPE),
             Field(INFORMATION_PART_TEXT_FIELD_MESSAGE, INFORMATION_PART_TEXT_FIELD, str),
             Field(INFORMATION_PART_PHOTOS_FIELD_MESSAGE, INFORMATION_PART_PHOTOS_FIELD, PHOTO_TYPE),
             Field(INFORMATION_PART_AUDIO_FIELD_MESSAGE, INFORMATION_PART_AUDIO_FIELD, AUDIO_TYPE),
@@ -87,3 +88,21 @@ class InformationPart(StatsObject):
         }
         information_part_dict.update(additional_data)
         return information_part_dict
+
+    def to_model(self) -> InformationPartModel:
+        """
+        Converts the InformationPart object into an InformationPartModel instance for saving to the database.
+        """
+        return InformationPartModel(
+            id=self.id,
+            parent_id=self.parent_id,
+            name=self.part_name,
+            photos=self.photos,
+            audio=self.audio,
+            text=self.text,
+            link=self.link,
+            views_num=self.views_num,
+            likes_num=self.likes_num,
+            dislikes_num=self.dislikes_num,
+            visitors=self.visitors,
+        )

@@ -1,6 +1,7 @@
 from src.components.excursion.excursion import Excursion
 from src.components.user.user_editor import UserEditor
 from src.constants import TEXT_MODE, AUDIO_MODE, AUDIO_MODE_RU, TEXT_MODE_RU
+from src.database.models import UserStateModel
 
 
 class UserState:
@@ -74,3 +75,13 @@ class UserState:
             "is_admin": self.is_admin,
             "paid_excursions": self.paid_excursions,
         }
+
+    def to_model(self) -> UserStateModel:
+        """Convert UserState to UserStateModel for saving to the database."""
+        return UserStateModel(
+            user_id=self.user_id,
+            username=self.username,
+            mode=self.mode,
+            is_admin=self.is_admin,
+            paid_excursions=self.paid_excursions,
+        )

@@ -64,7 +64,7 @@ AUDIO_PATH = os.path.abspath("media/audio")
 IMAGES_PATH = os.path.abspath("media/images")
 
 # User state modes
-ADMINS_LIST = {"ivanezox", "zeevvolk"}
+ADMINS_LIST = {"ivanezox", "zeevvolk", "donnie_stockman"}
 AUDIO_MODE = "audio"
 TEXT_MODE = "text"
 AUDIO_MODE_RU = 'аудио формат'
@@ -210,6 +210,7 @@ POINT_LOCATION_LINK_FIELD = "location_link"
 PHOTO_TYPE = "photos"
 AUDIO_TYPE = "audio"
 ONE_PHOTO_TYPE = "photo"
+URL_TYPE = "url"
 
 # get_fields() keys
 FIELD_MESSAGE_KEY = "field_message"

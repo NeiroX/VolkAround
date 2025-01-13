@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from src.components.field import Field
 from src.constants import *
 from src.data.s3bucket import s3_file_exists
+from src.database.models import ExcursionModel
 
 
 class Excursion(StatsObject):
@@ -77,15 +78,30 @@ class Excursion(StatsObject):
         return [
             Field(EXCURSION_NAME_FIELD_MESSAGE, NAME_FIELD, str),
             Field(EXCURSION_PAYMENT_REQUIREMENT_FIELD_MESSAGE, EXCURSION_IS_PAID_FIELD, bool),
-            Field(EXCURSION_DURATION_FIELD_MESSAGE, EXCURSION_DURATION_FIELD, str),
+            Field(EXCURSION_DURATION_FIELD_MESSAGE, EXCURSION_DURATION_FIELD, int),
         ]
 
     def set_from_dict(self, data: Dict[str, Any]) -> None:
         self.name = data.get(NAME_FIELD, self.name)
         self.is_paid = data.get(EXCURSION_IS_PAID_FIELD, self.is_paid)
         self.duration = data.get(EXCURSION_DURATION_FIELD, self.duration)
-        if type(self.duration) is str and self.duration.isdigit():
-            self.duration = int(self.duration)
+
+    def to_model(self) -> ExcursionModel:
+        """
+        Converts the Excursion object into an ExcursionModel instance for saving to the database.
+        """
+        return ExcursionModel(
+            id=self.id,
+            name=self.name,
+            is_draft=self.is_draft,
+            is_paid=self.is_paid,
+            duration=self.duration,
+            points=[point.to_model() for point in self.points],  # Assuming Point has a to_model method
+            likes_num=self.likes_num,
+            dislikes_num=self.dislikes_num,
+            views_num=self.views_num,
+            visitors=self.visitors,
+        )
 
     @staticmethod
     def _validate_info_files(point: Point) -> None:

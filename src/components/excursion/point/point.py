@@ -3,18 +3,20 @@ from typing import List, Dict, Any
 from src.components.field import Field
 from src.constants import *
 from src.components.excursion.point.information_part import InformationPart
+from src.database.models import PointModel
 
 
 class Point(InformationPart):
     point_id = 0
 
-    def __init__(self, point_id: int, excursion_id: int, address: str = DEFAULT_ADDRESS, location_photo: str = None,
+    def __init__(self, point_id: int, parent_id: int, address: str = DEFAULT_ADDRESS, location_photo: str = None,
                  photos: List[str] = None, audio: str = None, text: str = DEFAULT_TEXT,
                  part_name: str = DEFAULT_INFORMATION_PART_NAME,
                  link: str = None,
                  extra_information_points: List[InformationPart] = None, location_link: str = None,
                  views_num: int = 0, likes_num: int = 0, dislikes_num: int = 0, visitors: List[str] = None):
-        super().__init__(information_point_id=point_id, parent_id=excursion_id, part_name=part_name, photos=photos, audio=audio, text=text,
+        super().__init__(information_point_id=point_id, parent_id=parent_id, part_name=part_name, photos=photos,
+                         audio=audio, text=text,
                          link=link,
                          views_num=views_num, likes_num=likes_num, dislikes_num=dislikes_num, visitors=visitors)
         # Location info
@@ -63,7 +65,7 @@ class Point(InformationPart):
         fields = super().get_fields()
         fields.append(Field(POINT_ADDRESS_FIELD_MESSAGE, POINT_ADDRESS_FIELD, str))
         fields.append(Field(POINT_LOCATION_PHOTO_FIELD_MESSAGE, POINT_LOCATION_PHOTO_FIELD, ONE_PHOTO_TYPE))
-        fields.append(Field(POINT_LOCATION_LINK_FIELD_MESSAGE, POINT_LOCATION_LINK_FIELD, str))
+        fields.append(Field(POINT_LOCATION_LINK_FIELD_MESSAGE, POINT_LOCATION_LINK_FIELD, URL_TYPE))
         return fields
 
     def update_extra_information_points(self, extra_information_point: InformationPart) -> None:
@@ -87,3 +89,25 @@ class Point(InformationPart):
         else:
             point_to_dictionary["extra_information_points"] = []
         return point_to_dictionary
+
+    def to_model(self) -> PointModel:
+        """
+        Converts the Point object into a PointModel instance for saving to the database.
+        """
+        return PointModel(
+            id=self.id,
+            parent_id=self.parent_id,
+            address=self.address,
+            location_photo=self.location_photo,
+            photos=self.photos,
+            audio=self.audio,
+            text=self.text,
+            name=self.part_name,
+            link=self.link,
+            location_link=self.location_link,
+            views_num=self.views_num,
+            likes_num=self.likes_num,
+            dislikes_num=self.dislikes_num,
+            visitors=self.visitors,
+            extra_information_points=[info_point.to_model() for info_point in self.extra_information_points]
+        )
