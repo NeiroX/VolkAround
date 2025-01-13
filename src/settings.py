@@ -26,16 +26,14 @@ if DEBUG:
 
 # Heroku
 else:
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASE_URL = os.environ['DATABASE_URL']
     if DATABASE_URL:
-        parsed_url = urlparse(DATABASE_URL)
-        DATABASE_USER = parsed_url.username
-        DATABASE_PASSWORD = parsed_url.password
-        DATABASE_HOST = parsed_url.hostname
-        DATABASE_PORT = parsed_url.port if parsed_url.port else 5432  # Default to 5432 if no port is provided
-        DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
-        print(f"Port: {DATABASE_PORT}")  # Debug log
-
+        DATABASE_DATA = DATABASE_URL.split(':')
+        DATABASE_USER = DATABASE_DATA[1].replace('//', '')
+        DATABASE_PASSWORD = DATABASE_DATA[2].split('@')[0]
+        DATABASE_HOST = DATABASE_DATA[2].split('@')[1]
+        DATABASE_PORT = DATABASE_DATA[3].split('/')[0]
+        DATABASE_NAME = DATABASE_DATA[3].split('/')[1]
     else:
         raise ValueError("DATABASE_URL is not set in the environment variables")
 
