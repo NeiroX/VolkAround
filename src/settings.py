@@ -15,6 +15,7 @@ DEBUG = os.getenv("DEBUG")
 # DATABASE_URL = os.getenv("DATABASE_URL")
 
 # PosgreSQL database settings
+# Local
 if DEBUG:
     DATABASE_USER = os.getenv("DATABASE_USER")
     DATABASE_NAME = os.getenv("DATABASE_NAME")
@@ -23,6 +24,7 @@ if DEBUG:
     DATABASE_PORT = os.getenv("DATABASE_PORT")
     DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 
+# Heroku
 else:
     DATABASE_URL = os.getenv("DATABASE_URL")
     if DATABASE_URL:
@@ -32,6 +34,8 @@ else:
         DATABASE_HOST = parsed_url.hostname
         DATABASE_PORT = parsed_url.port
         DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
+        print(f"Port: {DATABASE_PORT}")  # Debug log
+
     else:
         raise ValueError("DATABASE_URL is not set in the environment variables")
 
