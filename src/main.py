@@ -20,9 +20,14 @@ def apply_migrations():
     alembic_ini_path = os.path.join(cwd, "alembic.ini")
     alembic_cfg = Config(alembic_ini_path)  # Path to your Alembic configuration file
     logging.debug(f"Alembic ini path: {alembic_ini_path}")
+    print(f"Alembic ini path: {alembic_ini_path}")
+    logging.debug(f"Current sqlalchemy.url: {alembic_cfg.get_main_option('sqlalchemy.url')}")
+    print(f"Current sqlalchemy.url: {alembic_cfg.get_main_option('sqlalchemy.url')}")
     alembic_cfg.set_main_option('sqlalchemy.url', DATABASE_URL)
     logging.debug(f"Set sqlalchemy.url parameter to: {DATABASE_URL}")
+    print(f"Set sqlalchemy.url parameter to: {DATABASE_URL}")
     logging.debug(f"Current sqlalchemy.url: {alembic_cfg.get_main_option('sqlalchemy.url')}")
+    print(f"Current sqlalchemy.url: {alembic_cfg.get_main_option('sqlalchemy.url')}")
 
     command.upgrade(alembic_cfg, "head")  # Apply all migrations up to the latest
 
@@ -49,6 +54,7 @@ if __name__ == "__main__":
 
     # Example log messages
     logging.debug("Running main file!!!")
+    print("Running main file!!!")
 
     if not TOKEN:
         raise ValueError("Missing TELEGRAM_BOT_TOKEN in .env file")  # Replace with your bot token
