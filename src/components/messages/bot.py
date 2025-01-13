@@ -23,7 +23,6 @@ def get_user_id_by_update(update: Update) -> int:
 
 
 # TODO: Finish menu transitions
-# TODO: Check link format
 # TODO: Add statistics for points and sub themes
 class Bot:
     """The main bot class coordinating everything."""

@@ -1,4 +1,6 @@
 import os
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -6,15 +8,29 @@ load_dotenv()
 # Telegram TOKEN
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+# Debug
+DEBUG = os.getenv("DEBUG")
 # Mongo and Database settings
-DATABASE_NAME = os.getenv("DATABASE_NAME")
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_NAME = os.getenv("DATABASE_NAME")
+# DATABASE_URL = os.getenv("DATABASE_URL")
 
 # PosgreSQL database settings
-DATABASE_USER = os.getenv("DATABASE_USER")
-DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-DATABASE_HOST = os.getenv("DATABASE_HOST")
-DATABASE_PORT = os.getenv("DATABASE_PORT")
+if DEBUG:
+    DATABASE_USER = os.getenv("DATABASE_USER")
+    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+    DATABASE_HOST = os.getenv("DATABASE_HOST")
+    DATABASE_PORT = os.getenv("DATABASE_PORT")
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if DATABASE_URL:
+        parsed_url = urlparse(DATABASE_URL)
+        DATABASE_USER = parsed_url.username
+        DATABASE_PASSWORD = parsed_url.password
+        DATABASE_HOST = parsed_url.hostname
+        DATABASE_PORT = parsed_url.port
+        DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
+    else:
+        raise ValueError("DATABASE_URL is not set in the environment variables")
 
 AWS_SERVER_PUBLIC_KEY = os.getenv('AWS_SERVER_PUBLIC_KEY')
 AWS_SERVER_SECRET_KEY = os.getenv('AWS_SERVER_SECRET_KEY')
