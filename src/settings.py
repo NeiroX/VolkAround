@@ -10,7 +10,7 @@ load_dotenv()
 TOKEN = config("TELEGRAM_BOT_TOKEN")
 
 # Debug
-DEBUG = config("DEBUG")
+DEBUG = config("DEBUG", cast=bool, default=False)
 # Mongo and Database settings
 # DATABASE_NAME = os.getenv("DATABASE_NAME")
 # DATABASE_URL = os.getenv("DATABASE_URL")
