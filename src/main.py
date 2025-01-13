@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.components.messages.bot import Bot
 from src.database.session import create_session
-from src.settings import TOKEN
+from src.settings import TOKEN, DATABASE_URL
 from src.database.session import get_db_connection
 
 def apply_migrations():
@@ -12,6 +12,7 @@ def apply_migrations():
     Applies Alembic migrations to ensure the database schema is up-to-date.
     """
     alembic_cfg = Config("alembic.ini")  # Path to your Alembic configuration file
+    alembic_cfg.set_main_option('sqlalchemy.url', DATABASE_URL)
     command.upgrade(alembic_cfg, "head")  # Apply all migrations up to the latest
 
 def test_connection():

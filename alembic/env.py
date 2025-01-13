@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -10,6 +11,10 @@ from src.settings import DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
+
+# Load environment variables from .env file (for local development only)
+
+# Use DATABASE_URL from environment (Heroku will automatically set this)
 config = context.config
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
 
