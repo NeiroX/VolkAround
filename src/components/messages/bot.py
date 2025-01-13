@@ -377,7 +377,10 @@ class Bot:
         elif user_state.user_editor.get_files_sending_mode():
             return
 
-        if user_state.user_editor.get_editing_specific_field():
+        if (user_state.user_editor.get_editing_specific_field() and
+                (update.callback_query and update.callback_query.data == SKIP_FIELD_CALLBACK)):
+            user_state.user_editor.disable_editing_specific_field()
+        elif user_state.user_editor.get_editing_specific_field():
             return
 
         # Move to the next field
