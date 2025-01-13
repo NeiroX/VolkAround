@@ -32,7 +32,7 @@ else:
         DATABASE_USER = DATABASE_DATA[1].replace('//', '')
         DATABASE_PASSWORD = DATABASE_DATA[2].split('@')[0]
         DATABASE_HOST = DATABASE_DATA[2].split('@')[1]
-        DATABASE_PORT = DATABASE_DATA[3].split('/')[0]
+        DATABASE_PORT = DATABASE_DATA[3].split('/')[0] if DATABASE_DATA[3].split('/')[0] else 5432
         DATABASE_NAME = DATABASE_DATA[3].split('/')[1]
     else:
         raise ValueError("DATABASE_URL is not set in the environment variables")
