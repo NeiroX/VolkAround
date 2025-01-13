@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.database.models import Base
-from src.settings import DATABASE_URL
+from src.settings import DATABASE_URL, DATABASE_PORT, DATABASE_NAME, DATABASE_USER, DATABASE_HOST, DATABASE_PASSWORD
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -66,7 +66,14 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section, {
+            "port": DATABASE_PORT,
+            "name": DATABASE_NAME,
+            "host": DATABASE_HOST,
+            "user": DATABASE_USER,
+            "password": DATABASE_PASSWORD,
+            "url": DATABASE_URL,
+        }),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
