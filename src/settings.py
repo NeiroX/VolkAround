@@ -39,9 +39,9 @@ else:
     else:
         raise ValueError("DATABASE_URL is not set in the environment variables")
 
-AWS_SERVER_PUBLIC_KEY = config('AWS_SERVER_PUBLIC_KEY')
-AWS_SERVER_SECRET_KEY = config('AWS_SERVER_SECRET_KEY')
-AWS_REGION = config('AWS_REGION', 'us-east-1')
+AWS_SERVER_PUBLIC_KEY = config('AWS_ACCESS_KEY_ID', default=None, cast=str)
+AWS_SERVER_SECRET_KEY = config('AWS_SECRET_ACCESS_KEY', default=None, cast=str)
+AWS_REGION = config('AWS_REGION', default='eu-central-1')
 BUCKET_NAME = None
 if config('BUCKET_NAME', '').strip():
     BUCKET_NAME = config('BUCKET_NAME')
