@@ -26,7 +26,7 @@ if DEBUG:
 
 # Heroku
 else:
-    DATABASE_URL = os.environ['DATABASE_URL']
+    DATABASE_URL = os.getenv('DATABASE_URL')
     if DATABASE_URL:
         DATABASE_DATA = DATABASE_URL.split(':')
         DATABASE_USER = DATABASE_DATA[1].replace('//', '')
