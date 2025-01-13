@@ -1,3 +1,5 @@
+import os
+
 from alembic import command
 from alembic.config import Config
 from sqlalchemy.orm import Session
@@ -11,7 +13,12 @@ def apply_migrations():
     """
     Applies Alembic migrations to ensure the database schema is up-to-date.
     """
-    alembic_cfg = Config("alembic.ini")  # Path to your Alembic configuration file
+    # Get the current working directory
+    cwd = os.getcwd()
+
+    # Construct the absolute path to the alembic.ini file
+    alembic_ini_path = os.path.join(cwd, "alembic.ini")
+    alembic_cfg = Config(alembic_ini_path)  # Path to your Alembic configuration file
     alembic_cfg.set_main_option('sqlalchemy.url', DATABASE_URL)
     command.upgrade(alembic_cfg, "head")  # Apply all migrations up to the latest
 
