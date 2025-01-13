@@ -32,7 +32,7 @@ else:
         DATABASE_USER = parsed_url.username
         DATABASE_PASSWORD = parsed_url.password
         DATABASE_HOST = parsed_url.hostname
-        DATABASE_PORT = parsed_url.port
+        DATABASE_PORT = parsed_url.port if parsed_url.port else 5432  # Default to 5432 if no port is provided
         DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
         print(f"Port: {DATABASE_PORT}")  # Debug log
 
