@@ -58,6 +58,8 @@ STOP_EMOJI = u"\U0001F6D1"  # 🛑
 DANGER_WARNING_EMOJI = u"\U00002620"  # ☠️
 REPLACE_EMOJI = u"\u267B\ufe0f"  # ♻️
 ADD_EMOJI = u"\U0001F4E5"  # 📥
+EXCURSION_EMOJI = "\U0001F3DE"  # 🏞️ (National Park)
+ECHO_EMOJI = "\U0001F4E2"  # 📢
 
 # Paths
 AUDIO_PATH = os.path.abspath("media/audio")
@@ -115,7 +117,7 @@ FEEDBACK_CONGRATS_MESSAGE = (
     f"Надеемся, вам понравилось. Поделитесь впечатлениями, чтобы мы стали еще лучше! {BOOK_EMOJI}"
 )
 
-EXCURSIONS_LIST_MESSAGE = f"Вот список доступных экскурсий. Выбирайте любую и вперед! {LOCATION_PIN_EMOJI}"
+EXCURSIONS_LIST_MESSAGE = f"Вот список доступных экскурсий. Выбирайте любую и вперед! {EXCURSION_EMOJI}"
 
 ACTION_COMPLETED_SUCCESSFULLY_MESSAGE = f"Действие успешно выполнено {CONGRATULATIONS_EMOJI}"
 CURRENT_FIELD_VALUE = f"{CURRENT_STATE_EMOJI} Текущее значение:"
@@ -161,9 +163,10 @@ DELETE_EXCURSION_BUTTON = f"{DELETE_EMOJI} Удалить экскурсию"
 REPLACE_EXISTING_FILES_BUTTON = f"{REPLACE_EMOJI} Заменить текущие файлы"
 ADD_TO_EXISTING_FILES_BUTTON = f"{ADD_EMOJI} Добавить к текущим"
 DELETE_EXISTING_FILES_BUTTON = f"{DELETE_EMOJI} Удалить текущие файлы"
-RETURN_TO_PREVIOUS_MENU_STATE = f"{BACK_ARROW_EMOJI} Вернуться обратно"
+RETURN_TO_PREVIOUS_MENU_STATE_BUTTON = f"{BACK_ARROW_EMOJI} Вернуться обратно"
 DELETE_ALL_COLLECTIONS_BUTTON = f"{DELETE_EMOJI} Удалить все"
-APPROVE_DELETING_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю удаление"
+APPROVE_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю"
+ECHO_BUTTON = f"{ECHO_EMOJI} Написать новость"
 
 # Default settings to components labels
 DEFAULT_EXCURSION_NAME = "Название засекречено"
@@ -189,6 +192,7 @@ INFORMATION_PART_PHOTOS_FIELD_MESSAGE = f"{PHOTO_EMOJI} Пришлите фот�
 POINT_ADDRESS_FIELD_MESSAGE = f"{TEXT_EMOJI} Введите адресс локации. Если хотите оставить предыдущее значение, пропустите поле"
 POINT_LOCATION_PHOTO_FIELD_MESSAGE = f"{PHOTO_EMOJI} Пришлите фото геолокации. Если хотите оставить предыдущее значение, пропустите поле"
 POINT_LOCATION_LINK_FIELD_MESSAGE = f"{LINK_EMOJI} Пришлите ссылку на точку в Google Maps. Если хотите оставить предыдущее значение, пропустите поле"
+ECHO_MESSAGE = f"{TEXT_EMOJI} Пришлите новость для того, чтобы послать ее всем пользователям."
 
 # Fields keys
 NAME_FIELD = "name"
@@ -248,16 +252,17 @@ ADD_EXTRA_POINT_CALLBACK = "add_extra_point_"
 EDIT_EXTRA_POINT_FIELDS_CALLBACK = "edit_fields_extra_point_"
 DELETE_EXTRA_POINT_CALLBACK = "delete_extra_point_"
 DELETE_EXCURSION_CALLBACK = "delete_excursion"
-EXCURSION_STATS_CALLBACK = "excursion_stats"
-POINT_STATS_CALLBACK = "point_stats_"
-EXTRA_POINT_STATS_CALLBACK = "extra_point_stats_"
+EXCURSION_STATS_CALLBACK = "stats_excursion_"
+POINT_STATS_CALLBACK = "stats_point_"
+EXTRA_POINT_STATS_CALLBACK = "stats_extra_point_"
 EXCURSION_SUMMARY_CALLBACK = "excursion_summary"
-# DISABLE_SENDING_FILES_CALLBACK = "disable_sending_files"
 ADD_TO_EXISTING_FILES_CALLBACK = "add_to_existing_files"
 REPLACE_EXISTING_FILES_CALLBACK = "replace_existing_files"
 DELETE_EXISTING_FILES_CALLBACK = "delete_existing_files"
 DELETE_ALL_COLLECTIONS_CALLBACK = "delete_all_collections"
 APPROVE_DELETING_CALLBACK = "approve_deleting"
+ECHO_CALLBACK = "echo"
+SEND_ECHO_CALLBACK = "send_echo"
 
 # Bunches of callbacks
 FILES_CALLBACKS = {SKIP_FIELD_CALLBACK,

@@ -1,7 +1,9 @@
 from typing import List, Union
 from urllib.parse import urlparse
 
+import telegram
 from telegram import Update, InlineKeyboardButton
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, filters, \
     MessageHandler
 
@@ -14,7 +16,7 @@ from src.components.messages.message_sender import MessageSender
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.point import Point
 from src.components.user.user_state import UserState
-from src.data.load_manager import MongoLoadManager
+import logging
 from src.constants import *
 
 
@@ -22,14 +24,14 @@ def get_user_id_by_update(update: Update) -> int:
     return update.callback_query.from_user.id if update.callback_query else update.message.from_user.id
 
 
-# TODO: Finish menu transitions
-# TODO: Add statistics for points and sub themes
 class Bot:
     """The main bot class coordinating everything."""
 
     def __init__(self, token, session):
+        logging.info("Initializing bot...")
         self.application = Application.builder().token(token).build()
         self.session = session
+        self.bot = telegram.Bot(token=token)
         self.data_loader = PostgresLoadManager(session)
         self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
         self.excursions = self.data_loader.load_excursions()  # Dictionary of all available excursions
@@ -38,16 +40,21 @@ class Bot:
         """Gets or creates the user state for the given user."""
         user_id = update.callback_query.from_user.id if update.callback_query else update.message.from_user.id
         username = update.callback_query.from_user.username if update.callback_query else update.message.from_user.username
+        chat_id = update.effective_chat.id
+        print(chat_id)
+        logging.info(f"Getting user state for user {username} with id {user_id}")
         if user_id not in self.user_states:
+            logging.info(f"User state for username: {username}, user ID {user_id} not found. Creating new user state.")
             is_admin = True if (username is not None and username.lower() in ADMINS_LIST) else False
-            self.user_states[user_id] = UserState(username=username, user_id=user_id, is_admin=is_admin)
+            self.user_states[user_id] = UserState(username=username, user_id=user_id, chat_id=chat_id,
+                                                  is_admin=is_admin)
             self.data_loader.save_user_state(self.user_states[user_id])
-        # elif username is not None and username.lower() in ADMINS_LIST:
-        #     self.user_states[user_id].is_admin = True
-        #     self.data_loader.save_user_state(self.user_states[user_id])
+        if not self.user_states[user_id].chat_id:
+            self.user_states[user_id].chat_id = chat_id
         return self.user_states[user_id]
 
     def sync_data(self) -> None:
+        logging.info("Syncing data")
         self.user_states = self.data_loader.load_user_states()  # Keeps track of UserState objects for each user
         self.excursions = self.data_loader.load_excursions()
 
@@ -55,6 +62,7 @@ class Bot:
         """Handles the /start command."""
         user_state = self.get_user_state(update)
         user_state.reset_current_excursion()  # Reset any ongoing current_excursion for a fresh start
+        logging.info(f"Starting bot by user {user_state.get_username()}")
 
         # Explain the available versions
         await MessageSender.send_intro_message(update)
@@ -62,7 +70,6 @@ class Bot:
     async def show_excursions(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Displays the list of available excursions based on user access."""
         query = update.callback_query
-        print(query.data)
         if query.data == SHOW_EXCURSIONS_SYNC_CALLBACK:
             self.sync_data()
         user_state = self.get_user_state(update)
@@ -70,9 +77,10 @@ class Bot:
         user_state.user_editor.disable_editing_mode()
         user_state.user_editor.disable_order_changing()
         await MessageSender.delete_previous_buttons(query)
-        print(f"Sending excursions list for user {user_state.username}")
-        print(f"Available excursions: {list(self.excursions.keys())}")
-        print(user_state.does_have_admin_access())
+        logging.info(
+            f"Sending excursions list for user {user_state.username}\n"
+            f"Admin status: {user_state.does_have_admin_access()}")
+        logging.info(f"Available excursions: {list(self.excursions.keys())}")
         await MessageSender.send_excursions_list(query, user_state, self.excursions)
         await query.answer()  # Acknowledge the callback_data query to avoid "loading" state.
 
@@ -80,11 +88,13 @@ class Bot:
     async def disabled_button_handler(update, context):
         """Handles clicks on disabled buttons."""
         query = update.callback_query
+        logging.info(f"Handling click on disabled button for user {query.from_user.username}")
         await MessageSender.send_error_message(query, ACCESS_ERROR, is_alert=True)
 
-    async def choose_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def choose_excursion(self, update: Update):
         """Handles the selection of a components."""
         query = update.callback_query
+        logging.info(f"Handling selection for user {query.from_user.username}")
         await MessageSender.delete_previous_buttons(query)
 
         user_state = self.get_user_state(update)
@@ -103,7 +113,7 @@ class Bot:
         chosen_excursion = next(
             ((name, excursion) for name, excursion in self.excursions.items() if
              excursion.get_id() == int(excursion_id)), None)
-        print("Chosen components: " + chosen_excursion[0])
+        logging.info("Chosen components: " + chosen_excursion[0])
         if chosen_excursion is None:
             await MessageSender.send_error_message(query, EXCURSION_DOES_NOT_EXISTS_ERROR)
             return
@@ -115,15 +125,18 @@ class Bot:
 
         # Set the user's current current_excursion and start it
         user_state.set_excursion(chosen_excursion[1])
-        await self.start_excursion(update, chosen_excursion[1])
+        return chosen_excursion[1]
+        # await self.start_excursion(update, chosen_excursion[1])
 
-    async def start_excursion(self, update: Update, excursion: Excursion):
+    async def start_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Starts the selected current_excursion."""
 
         query = update.callback_query
-        # await MessageSender.delete_previous_buttons(query)
-
+        await MessageSender.delete_previous_buttons(query)
+        excursion = await self.choose_excursion(update)
         user_state = self.get_user_state(update)
+
+        logging.info(f"Starting excursion {excursion.get_name()} for user {user_state.username}")
 
         # point = user_state.get_point()  # Get the information for the current part
 
@@ -181,8 +194,11 @@ class Bot:
         user_state = self.get_user_state(update)
         current_point = user_state.get_point()
         extra_parts = current_point.get_extra_information_points()
-        action, extra_part_id = query.data.split("_", 1)
-        if extra_part_id.isdigit():
+        divided_query = query.data.split("_")
+        point_id = divided_query[-2]
+        extra_part_id = divided_query[-1]
+        if extra_part_id.isdigit() and point_id.isdigit():
+            point_id = int(point_id)
             extra_part_id = int(extra_part_id)
         else:
             await MessageSender.send_error_message(query, EXTRA_PART_DOES_NOT_EXISTS_ERROR, is_alert=False)
@@ -257,12 +273,14 @@ class Bot:
         if not excursion_id.isdigit():
             await MessageSender.send_error_message(query, INVALID_ACTION_ERROR, is_admin=True)
         excursion_id = int(excursion_id)
-
         for excursion in self.excursions.values():
             if excursion_id == excursion.get_id():
                 excursion.change_visibility()
-                break
-        await AdminMessageSender.send_success_message(update)
+                previous_menu_button = InlineKeyboardButton(
+                    f"{BACK_ARROW_EMOJI}{EXCURSION_EMOJI}{excursion.get_name()}",
+                    callback_data=f"{CHOOSE_CALLBACK}{excursion_id}")
+                await AdminMessageSender.send_success_message(update, previous_menu_button=previous_menu_button)
+                return
 
     async def add_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -341,6 +359,8 @@ class Bot:
             await self.handle_next_field(update, context)
         elif user_state.user_editor.get_order_changing():
             await self.handle_order_changing(update, context)
+        elif user_state.user_editor.get_sending_echo():
+            await self._handle_echo_text(update, context)
 
     async def handle_next_field(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the current field and moves to the next one."""
@@ -575,9 +595,11 @@ class Bot:
 
     async def edit_points(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
+        excursion = user_state.get_current_excursion()
         await MessageSender.delete_previous_buttons(update.callback_query)
         await AdminMessageSender.send_points_list(update.callback_query,
-                                                  user_state.get_current_excursion().get_points())
+                                                  excursion.get_points(),
+                                                  excursion)
 
     async def edit_excursion(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
@@ -609,6 +631,7 @@ class Bot:
                 self._delete_element_files(point)
                 for extra_point in point.get_extra_information_points():
                     self._delete_element_files(extra_point)
+                    self.data_loader.delete_information_part(extra_point.get_id())
                 current_excursion.points.remove(point)
                 self.data_loader.delete_point(point_id)
                 self.data_loader.save_excursion(current_excursion)
@@ -632,7 +655,7 @@ class Bot:
                     if extra_point.get_id() == extra_point_id:
                         self._delete_element_files(extra_point)
                         point.extra_information_points.remove(extra_point)
-                        self.data_loader.delete_extra_information_point(extra_point_id)
+                        self.data_loader.delete_information_part(extra_point_id)
                         self.data_loader.save_excursion(current_excursion)
                         # Return button
                         previous_menu_button = InlineKeyboardButton(EDIT_POINT_BUTTON,
@@ -678,14 +701,22 @@ class Bot:
         current_excursion = user_state.get_current_excursion()
         callback_data = update.callback_query.data
         if callback_data.startswith(EXCURSION_STATS_CALLBACK):
-            await AdminMessageSender.send_object_stats(update, current_excursion)
+            previous_menu_button = InlineKeyboardButton(
+                f"{BACK_ARROW_EMOJI}{EXCURSION_EMOJI}{current_excursion.get_name()}",
+                callback_data=f"{CHOOSE_CALLBACK}{current_excursion.get_id()}")
+            await AdminMessageSender.send_object_stats(update, current_excursion,
+                                                       previous_menu_button=previous_menu_button)
         elif callback_data.startswith(POINT_STATS_CALLBACK):
             point_id = int(callback_data.split("_")[-1])
             for point in current_excursion.get_points():
                 if point.get_id() == point_id:
-                    await AdminMessageSender.send_object_stats(update, point)
+                    previous_menu_button = InlineKeyboardButton(
+                        f"{BACK_ARROW_EMOJI}{LOCATION_PIN_EMOJI}{point.get_name()}",
+                        callback_data=f"{EDIT_POINT_CALLBACK}{point_id}")
+                    await AdminMessageSender.send_object_stats(update, point,
+                                                               previous_menu_button=previous_menu_button)
                     return
-        elif callback_data.startswith(POINT_STATS_CALLBACK):
+        elif callback_data.startswith(EXTRA_POINT_STATS_CALLBACK):
             point_id, extra_point_id = update.callback_query.data.split("_")[-2:]
             point_id = int(point_id)
             extra_point_id = int(extra_point_id)
@@ -693,7 +724,11 @@ class Bot:
                 if point.get_id() == point_id:
                     for extra_point in point.get_extra_information_points():
                         if extra_point.get_id() == extra_point_id:
-                            await AdminMessageSender.send_object_stats(update, extra_point)
+                            previous_menu_button = InlineKeyboardButton(
+                                f"{BACK_ARROW_EMOJI}{SUB_THEME_EMOJI}{extra_point.get_name()}",
+                                callback_data=f"{EDIT_EXTRA_POINT_CALLBACK}{point_id}_{extra_point_id}")
+                            await AdminMessageSender.send_object_stats(update, extra_point,
+                                                                       previous_menu_button=previous_menu_button)
                             return
 
     async def send_excursion_summary(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -730,9 +765,10 @@ class Bot:
                 current_excursion = user_state.get_current_excursion()
                 current_excursion.points = [old_points_order[new_index] for new_index in new_points_order]
                 self.data_loader.save_excursion(current_excursion)
-
                 # Return button
-                await AdminMessageSender.send_success_message(update)
+                previous_menu_button = InlineKeyboardButton(f"{BACK_ARROW_EMOJI}{current_excursion.get_name()}",
+                                                            callback_data=f"{CHOOSE_CALLBACK}{current_excursion.get_id()}")
+                await AdminMessageSender.send_success_message(update, previous_menu_button=previous_menu_button)
             except Exception as e:
                 print(f"Failed to handle order changing: {e}")
                 await update.message.reply_text(WRONG_FORMAT_MESSAGE)
@@ -747,7 +783,9 @@ class Bot:
         for point in current_excursion.get_points():
             self._delete_element_files(point)
             for extra_point in point.get_extra_information_points():
+                self.data_loader.delete_information_part(extra_point.get_id())
                 self._delete_element_files(extra_point)
+            self.data_loader.delete_point(point.get_id())
         del self.excursions[current_excursion.get_name()]
         self.data_loader.delete_excursion(excursion_id)
         await AdminMessageSender.send_success_message(update)
@@ -778,11 +816,44 @@ class Bot:
             elif callback_data.startswith(DELETE_ALL_COLLECTIONS_CALLBACK):
                 await self.clear_data(update)
 
+    async def _handle_echo_text(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(update)
+        if user_state.does_have_admin_access() and user_state.user_editor.get_sending_echo():
+            text = update.message.text
+            if not text:
+                await update.message.reply_text(WRONG_FORMAT_MESSAGE)
+            user_state.user_editor.set_echo_text(text)
+            message = (f"{STOP_EMOJI}{WARNING_EMOJI} Вы подтверждаете, что хотите отправить новость?\n"
+                       f"Текст, который будет разослан всем пользователям:\n"
+                       f"{text}")
+            await AdminMessageSender.approve_message(update, message, SEND_ECHO_CALLBACK)
+
+    async def _send_echo_to_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(update)
+        if user_state.does_have_admin_access() and user_state.user_editor.get_sending_echo():
+            message = user_state.user_editor.get_echo_text()
+            for user_state in self.user_states.values():
+                chat_id = user_state.get_chat_id()
+                if chat_id:
+                    await self.bot.send_message(chat_id=chat_id, text=message,
+                                                parse_mode=telegram.constants.ParseMode.MARKDOWN_V2)
+            user_state.user_editor.disable_sending_echo()
+            await AdminMessageSender.send_success_message(update)
+
+    async def _send_echo_request(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_state = self.get_user_state(update)
+        if user_state.does_have_admin_access():
+            user_state.user_editor.enable_sending_echo()
+            await AdminMessageSender.send_echo_request(update.callback_query)
+
     async def _send_approving_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state = self.get_user_state(update)
         if user_state.does_have_admin_access():
             callback = update.callback_query.data
-            await AdminMessageSender.approve_deleting_message(update, callback)
+            message = ''
+            if callback in [DELETE_EXCURSION_CALLBACK, DELETE_POINT_CALLBACK, DELETE_EXTRA_POINT_CALLBACK]:
+                message = f"{STOP_EMOJI}{WARNING_EMOJI} Вы подтверждаете, что хотите удалить элемент?"
+            await AdminMessageSender.approve_message(update, message, callback)
 
     def _delete_element_files(self, element: Union[Point, InformationPart]):
         files_to_delete = list()
@@ -822,7 +893,7 @@ class Bot:
                                                           pattern=f"^{SHOW_EXCURSIONS_CALLBACK}"))
         self.application.add_handler(
             CallbackQueryHandler(self.disabled_button_handler, pattern=f"^{DISABLED_CALLBACK}$"))
-        self.application.add_handler(CallbackQueryHandler(self.choose_excursion,
+        self.application.add_handler(CallbackQueryHandler(self.start_excursion,
                                                           pattern=f"^{CHOOSE_CALLBACK}"))
         self.application.add_handler(CallbackQueryHandler(self.handle_arrival,
                                                           pattern=f"^{ARRIVED_CALLBACK}$"))
@@ -892,5 +963,6 @@ class Bot:
             CallbackQueryHandler(self.handle_next_field, pattern=f"^{DELETE_EXISTING_FILES_CALLBACK}$"))
         self.application.add_handler(
             CallbackQueryHandler(self._handle_deleting, pattern=f"^{APPROVE_DELETING_CALLBACK}"))
-
+        self.application.add_handler(CallbackQueryHandler(self._send_echo_request, pattern=f"^{ECHO_CALLBACK}$"))
+        self.application.add_handler(CallbackQueryHandler(self._send_echo_to_users, pattern=f"^{SEND_ECHO_CALLBACK}$"))
         self.application.run_polling()

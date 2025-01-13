@@ -2,15 +2,15 @@ import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from src.settings import DATABASE_URL
-
+import logging
 
 def get_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
-        print("Connection established successfully.")
+        logging.info("Connection established successfully.")
         return conn
     except psycopg2.Error as e:
-        print(f"Error connecting to the database: {e}")
+        logging.error(f"Error connecting to the database: {e}")
         return None
 
 

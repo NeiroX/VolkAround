@@ -2,9 +2,24 @@ import os
 from urllib.parse import urlparse
 from decouple import config
 from dotenv import load_dotenv
+import logging
 
 # Local environment
 load_dotenv()
+
+# Define log format
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+
+# Create a logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+# Create a single StreamHandler for logging to the console
+info_logger = logging.StreamHandler()
+# Create a formatter and assign it to the handler
+formatter = logging.Formatter(LOG_FORMAT)
+info_logger.setFormatter(formatter)
+# Add the handler to the logger
+logger.addHandler(info_logger)
 
 # Telegram TOKEN
 TOKEN = config("TELEGRAM_BOT_TOKEN")
@@ -24,7 +39,6 @@ if DEBUG:
     DATABASE_HOST = config("DATABASE_HOST", default=None, cast=str)
     DATABASE_PORT = config("DATABASE_PORT", default=None, cast=int)
     DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-
 # Heroku
 else:
     DATABASE_URL = config('DATABASE_URL', default=None, cast=str)

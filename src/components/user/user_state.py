@@ -7,10 +7,11 @@ from src.database.models import UserStateModel
 class UserState:
     """Tracks the state of an individual user."""
 
-    def __init__(self, username: str, user_id: int, mode: str = TEXT_MODE, paid_excursions: list[int] = None,
+    def __init__(self, username: str, user_id: int, chat_id: int, mode: str = TEXT_MODE, paid_excursions: list[int] = None,
                  completed_excursions: list[int] = None, is_admin: bool = False) -> None:
         self.username = username
         self.user_id = user_id
+        self.chat_id = chat_id
         self.is_admin = is_admin
         self.mode = mode
         self.current_excursion = None
@@ -24,6 +25,9 @@ class UserState:
 
     def get_username(self) -> str:
         return self.username
+
+    def get_chat_id(self) -> int:
+        return self.chat_id
 
     def set_excursion(self, excursion: Excursion) -> None:
         self.current_excursion = excursion
@@ -71,6 +75,7 @@ class UserState:
         return {
             "username": self.username,
             "user_id": self.user_id,
+            "chat_id": self.chat_id,
             "mode": self.mode,
             "is_admin": self.is_admin,
             "paid_excursions": self.paid_excursions,
@@ -80,6 +85,7 @@ class UserState:
         """Convert UserState to UserStateModel for saving to the database."""
         return UserStateModel(
             user_id=self.user_id,
+            chat_id=self.chat_id,
             username=self.username,
             mode=self.mode,
             is_admin=self.is_admin,

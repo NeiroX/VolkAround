@@ -64,6 +64,7 @@ class MessageSender:
                 keyboard.append(
                     [InlineKeyboardButton(DELETE_ALL_COLLECTIONS_BUTTON,
                                           callback_data=DELETE_ALL_COLLECTIONS_CALLBACK)])
+            keyboard.append([InlineKeyboardButton(ECHO_BUTTON, callback_data=ECHO_CALLBACK)])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -78,7 +79,7 @@ class MessageSender:
     @staticmethod
     async def send_excursion_start_message(query: CallbackQuery, excursion: Excursion, is_admin: bool) -> None:
         """Sends the starting information for the components."""
-        await query.answer(f"Вы выбрали {excursion.get_name()}. Начнем наш тур!")
+        await query.answer(f"{EXCURSION_EMOJI} Вы выбрали {excursion.get_name()}. Начнем наш тур!")
         keyboard = [[InlineKeyboardButton(START_TOUR_BUTTON, callback_data=NEXT_POINT_CALLBACK)]]
         if is_admin:
             points_number = len(excursion.get_points())
