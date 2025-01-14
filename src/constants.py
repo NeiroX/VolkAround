@@ -60,7 +60,7 @@ REPLACE_EMOJI = u"\u267B\ufe0f"  # ♻️
 ADD_EMOJI = u"\U0001F4E5"  # 📥
 EXCURSION_EMOJI = "\U0001F3DE"  # 🏞️ (National Park)
 ECHO_EMOJI = "\U0001F4E2"  # 📢
-
+NEWS_EMOJI = "\U0001F4F0"  # 📰
 # Paths
 AUDIO_PATH = os.path.abspath("media/audio")
 IMAGES_PATH = os.path.abspath("media/images")

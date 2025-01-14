@@ -841,6 +841,7 @@ class Bot:
         user_state = self.get_user_state(update)
         if user_state.does_have_admin_access() and user_state.user_editor.get_sending_echo():
             message = user_state.user_editor.get_echo_text()
+            message = f"{NEWS_EMOJI} Новость от VolkAround:\n{message}"
             message = self.escape_markdown(message)
             for user_state in self.user_states.values():
                 chat_id = user_state.get_chat_id()
