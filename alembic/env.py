@@ -1,5 +1,6 @@
 import os
 from logging.config import fileConfig
+from urllib.parse import urlparse
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -13,6 +14,15 @@ from src.settings import DATABASE_URL
 # access to the values within the .ini file in use.
 # Use DATABASE_URL from environment (Heroku will automatically set this)
 config = context.config
+DATABASE_URL = config('DATABASE_URL', default=None, cast=str)
+if DATABASE_URL:
+    parsed_url = urlparse(DATABASE_URL)
+    DATABASE_USER = parsed_url.username
+    DATABASE_PASSWORD = parsed_url.password
+    DATABASE_HOST = parsed_url.hostname
+    DATABASE_PORT = parsed_url.port if parsed_url.port else "5432"  # Default to 5432 if no port is provided
+    DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
+    DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
 
 # Interpret the config file for Python logging.
