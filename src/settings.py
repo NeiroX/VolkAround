@@ -40,7 +40,7 @@ if DATABASE_URL:
     DATABASE_HOST = parsed_url.hostname
     DATABASE_PORT = parsed_url.port if parsed_url.port else "5432"  # Default to 5432 if no port is provided
     DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
-    # DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+    DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 else:
     raise ValueError("DATABASE_URL is not set in the environment variables")
 
