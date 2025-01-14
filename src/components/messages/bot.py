@@ -1,11 +1,13 @@
+import re
 from typing import List, Union
 from urllib.parse import urlparse
 
 import telegram
 from telegram import Update, InlineKeyboardButton
+from telegram.error import TelegramError
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, filters, \
     MessageHandler
-
+from string import punctuation
 from src.data.postgres_data_loader import PostgresLoadManager
 from src.data.s3bucket import save_file_to_s3, s3_delete_file
 
@@ -839,11 +841,15 @@ class Bot:
         user_state = self.get_user_state(update)
         if user_state.does_have_admin_access() and user_state.user_editor.get_sending_echo():
             message = user_state.user_editor.get_echo_text()
+            message = self.escape_markdown(message)
             for user_state in self.user_states.values():
                 chat_id = user_state.get_chat_id()
                 if chat_id:
-                    await self.bot.send_message(chat_id=chat_id, text=message,
-                                                parse_mode=telegram.constants.ParseMode.MARKDOWN_V2)
+                    try:
+                        await self.bot.send_message(chat_id=chat_id, text=message,
+                                                    parse_mode=telegram.constants.ParseMode.MARKDOWN_V2)
+                    except TelegramError as e:
+                        logging.error(f"Failed to send message: {e}")
             user_state.user_editor.disable_sending_echo()
             await AdminMessageSender.send_success_message(update)
 
@@ -857,11 +863,11 @@ class Bot:
         user_state = self.get_user_state(update)
         if user_state.does_have_admin_access():
             callback = update.callback_query.data
-            message = ''
-            if callback in [DELETE_EXCURSION_CALLBACK, DELETE_POINT_CALLBACK, DELETE_EXTRA_POINT_CALLBACK]:
+            if callback in [DELETE_EXCURSION_CALLBACK, DELETE_POINT_CALLBACK, DELETE_EXTRA_POINT_CALLBACK,
+                            DELETE_ALL_COLLECTIONS_CALLBACK]:
                 message = f"{STOP_EMOJI}{WARNING_EMOJI} Вы подтверждаете, что хотите удалить элемент?"
                 callback_data = f"{APPROVE_DELETING_CALLBACK}|{callback}"
-            await AdminMessageSender.approve_message(update, message, callback_data, APPROVE_DELETING_CALLBACK)
+                await AdminMessageSender.approve_message(update, message, callback_data, APPROVE_DELETING_BUTTON)
 
     def _delete_element_files(self, element: Union[Point, InformationPart]):
         files_to_delete = list()
@@ -873,6 +879,14 @@ class Bot:
             location_photo = element.get_location_photo()
             if location_photo: files_to_delete.append(location_photo)
         self._delete_files(files_to_delete)
+
+    @staticmethod
+    def escape_markdown(text: str) -> str:
+        """
+        Escapes special characters for MarkdownV2 parse mode.
+        """
+        special_characters = r'[!"#$%&\'()*+,-./:;<=>?@\[\\\]^_`{|}~]'
+        return re.sub(special_characters, r'\\\g<0>', text)
 
     @staticmethod
     def _delete_files(files: List[str]):
