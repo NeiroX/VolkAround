@@ -269,13 +269,14 @@ class MessageSender:
 
         if point.extra_information_points:
             extra_information_points = point.get_extra_information_points()
-            for num, elem in enumerate(extra_information_points):
+            for extra_part in extra_information_points:
                 print("Send move on request")
-                print(num, elem.get_name())
-                button_text = elem.get_name()
-                if elem.is_completed(user_id):
+                # print(num, elem.get_name())
+                button_text = extra_part.get_name()
+                if extra_part.is_completed(user_id):
                     button_text = f"{CHECK_MARK_EMOJI} {button_text}"
-                keyboard.append([InlineKeyboardButton(button_text, callback_data=EXTRA_PART_CALLBACK + str(num))])
+                keyboard.append(
+                    [InlineKeyboardButton(button_text, callback_data=EXTRA_PART_CALLBACK + str(extra_part.get_id()))])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_text(MOVE_ON_REQUEST_MESSAGE, reply_markup=reply_markup)
