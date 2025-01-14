@@ -1,1 +1,1 @@
-worker: alembic upgrade head && python -u src/main.py
+worker: alembic revision --autogenerate -m "New migration" && alembic upgrade head && python -u src/main.py
