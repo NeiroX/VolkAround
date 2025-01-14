@@ -44,8 +44,7 @@ class PointModel(Base):
 class InformationPartModel(Base):
     __tablename__ = 'information_parts'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    point_id = Column(Integer, ForeignKey('points.id'))
-    parent_id = Column(Integer)
+    parent_id = Column(Integer, ForeignKey('points.id'))  # Added ForeignKey constraint
     name = Column(String, nullable=False)
     photos = Column(JSONB, default=[])  # JSONB field
     audio = Column(JSONB, default=[])  # JSONB field
@@ -61,6 +60,7 @@ class InformationPartModel(Base):
 class UserStateModel(Base):
     __tablename__ = 'user_states'
     user_id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer, default=0)
     username = Column(String, nullable=False)
     mode = Column(String, default="TEXT_MODE")
     is_admin = Column(Boolean, default=False)

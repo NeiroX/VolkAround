@@ -9,6 +9,7 @@ from src.components.excursion.point.point import Point
 
 class UserEditor:
     def __init__(self):
+        self.echo_text = ''
         self.is_editing_mode = False
         self.editing_item = None
         self.fields = None
@@ -24,6 +25,7 @@ class UserEditor:
         self.return_to_previous_menu_message = None
         self.files_sending_mode = False
         self.editing_specific_field = False
+        self.sending_echo = False
         self.files_buffer = list()
         self.loading_file_index = 0
 
@@ -60,10 +62,28 @@ class UserEditor:
         self.files_sending_mode = False
         self.editing_specific_field = False
         self.files_buffer = list()
+        self.sending_echo = False
+        self.echo_text = ''
         self.loading_file_index = 0
 
     def get_extra_information_point_id(self) -> int:
         return self.extra_information_point_id
+
+    def enable_sending_echo(self):
+        self.sending_echo = True
+
+    def disable_sending_echo(self):
+        self.sending_echo = False
+        self.echo_text = ''
+
+    def set_echo_text(self, text: str) -> None:
+        self.echo_text = text
+
+    def get_echo_text(self) -> str:
+        return self.echo_text
+
+    def get_sending_echo(self):
+        return self.sending_echo
 
     def enable_files_sending(self) -> None:
         self.files_sending_mode = True
@@ -135,11 +155,7 @@ class UserEditor:
 
     def add_editing_result(self, result: Any) -> None:
         field_name = self.get_current_field_name()
-        print(result)
-        print(field_name)
-        print(self.editing_result)
         self.editing_result[field_name] = result
-        print(self.editing_result)
 
     def get_current_field_state(self) -> Any:
         current_field_name = self.get_current_field_name()
@@ -163,7 +179,6 @@ class UserEditor:
                 callback += f"{self.point_id}"
             elif self.point_id and self.extra_information_point_id:
                 callback += f"{self.point_id}_{self.extra_information_point_id}"
-            print(f"Previous menu button callback: {callback}")
             return InlineKeyboardButton(self.return_to_previous_menu_message, callback_data=callback)
         return None
 
