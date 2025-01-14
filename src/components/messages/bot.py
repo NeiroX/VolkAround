@@ -291,7 +291,7 @@ class Bot:
         Excursion.excursion_id += 1
         new_id = Excursion.excursion_id
 
-        new_excursion = Excursion(new_id)
+        new_excursion = Excursion(new_id, f"{DEFAULT_EXCURSION_NAME} {new_id}")
         user_state.user_editor.enable_editing_mode(new_excursion)
         await self._handle_next_field(update, context)
 

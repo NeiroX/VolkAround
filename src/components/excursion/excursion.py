@@ -10,7 +10,8 @@ from src.database.models import ExcursionModel
 class Excursion(StatsObject):
     excursion_id = 0
 
-    def __init__(self, excursion_id: int, name: str = DEFAULT_EXCURSION_NAME, points: List[Point] = None,
+    def __init__(self, excursion_id: int, name: str = f"{DEFAULT_EXCURSION_NAME} {excursion_id}",
+                 points: List[Point] = None,
                  is_draft: bool = True, is_paid: bool = False,
                  likes_num: int = 0,
                  dislikes_num: int = 0, views_num: int = 0, duration: int = 0, visitors: List[int] = None) -> None:

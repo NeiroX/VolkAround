@@ -89,7 +89,7 @@ class PostgresLoadManager:
             for excursion_data in data:
                 excursion = Excursion(
                     excursion_id=excursion_data.id,
-                    name=excursion_data.name or DEFAULT_EXCURSION_NAME,
+                    name=excursion_data.name or f"{DEFAULT_EXCURSION_NAME} {excursion_data.id}",
                     points=self.load_points(excursion_data.id),
                     is_paid=excursion_data.is_paid or False,
                     likes_num=excursion_data.likes_num or 0,
