@@ -196,22 +196,21 @@ class Bot:
         current_point = user_state.get_point()
         extra_parts = current_point.get_extra_information_points()
         divided_query = query.data.split("_")
-        point_id = divided_query[-2]
         extra_part_id = divided_query[-1]
-        if extra_part_id.isdigit() and point_id.isdigit():
-            # point_id = int(point_id)
+        if extra_part_id.isdigit():
             extra_part_id = int(extra_part_id)
         else:
             await MessageSender.send_error_message(query, EXTRA_PART_DOES_NOT_EXISTS_ERROR, is_alert=False)
-
-        if extra_part_id >= len(extra_parts):
-            await MessageSender.send_error_message(query, EXTRA_PART_DOES_NOT_EXISTS_ERROR, is_alert=False)
-        else:
-            extra_parts[extra_part_id].increase_views_num()
-            extra_parts[extra_part_id].add_new_visitor(user_state.get_user_id())
-            self.data_loader.save_information_part(extra_parts[extra_part_id])
-            await MessageSender.send_part(query, extra_parts[extra_part_id], user_state.mode)
-            await MessageSender.send_move_on_request(query, current_point, user_state.get_user_id())
+            return
+        for extra_part in extra_parts:
+            if extra_part_id == extra_part.get_id():
+                extra_part.increase_views_num()
+                extra_part.add_new_visitor(user_state.get_user_id())
+                self.data_loader.save_information_part(extra_part)
+                await MessageSender.send_part(query, extra_part, user_state.mode)
+                await MessageSender.send_move_on_request(query, current_point, user_state.get_user_id())
+                return
+        await MessageSender.send_error_message(query, EXTRA_PART_DOES_NOT_EXISTS_ERROR, is_alert=False)
 
     async def _change_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Allow the user to change the mode (audio/text) during the current_excursion."""
