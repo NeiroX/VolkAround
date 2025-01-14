@@ -165,8 +165,10 @@ ADD_TO_EXISTING_FILES_BUTTON = f"{ADD_EMOJI} Добавить к текущим"
 DELETE_EXISTING_FILES_BUTTON = f"{DELETE_EMOJI} Удалить текущие файлы"
 RETURN_TO_PREVIOUS_MENU_STATE_BUTTON = f"{BACK_ARROW_EMOJI} Вернуться обратно"
 DELETE_ALL_COLLECTIONS_BUTTON = f"{DELETE_EMOJI} Удалить все"
-APPROVE_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю"
+APPROVE_DELETING_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю удаление"
+APPROVE_SENDING_BUTTON = f"{DANGER_WARNING_EMOJI} Подтверждаю отправку"
 ECHO_BUTTON = f"{ECHO_EMOJI} Написать новость"
+DELETE_LINK_BUTTON = f"{DELETE_EMOJI} Удалить ссылку"
 
 # Default settings to components labels
 DEFAULT_EXCURSION_NAME = "Название засекречено"
@@ -263,6 +265,7 @@ DELETE_ALL_COLLECTIONS_CALLBACK = "delete_all_collections"
 APPROVE_DELETING_CALLBACK = "approve_deleting"
 ECHO_CALLBACK = "echo"
 SEND_ECHO_CALLBACK = "send_echo"
+DELETE_LINK_CALLBACK = "delete_link"
 
 # Bunches of callbacks
 FILES_CALLBACKS = {SKIP_FIELD_CALLBACK,

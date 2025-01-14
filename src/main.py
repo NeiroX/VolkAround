@@ -2,11 +2,13 @@ import os
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy.orm import Session
 import logging
+
+from botocore.session import Session
+
 from src.components.messages.bot import Bot
 from src.database.session import create_session
-from src.settings import TOKEN, DATABASE_URL
+from src.settings import TOKEN, DATABASE_URL, DEBUG
 from src.database.session import get_db_connection
 
 
@@ -59,7 +61,7 @@ if __name__ == "__main__":
     test_connection()
     apply_migrations()
     logging.info("Creating session...")
-    session = create_session()
+    session: Session = create_session()
     logging.info("Session created successfully")
 
     logging.info("Initializing Bot...")

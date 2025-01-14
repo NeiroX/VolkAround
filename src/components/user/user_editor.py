@@ -155,11 +155,7 @@ class UserEditor:
 
     def add_editing_result(self, result: Any) -> None:
         field_name = self.get_current_field_name()
-        print(result)
-        print(field_name)
-        print(self.editing_result)
         self.editing_result[field_name] = result
-        print(self.editing_result)
 
     def get_current_field_state(self) -> Any:
         current_field_name = self.get_current_field_name()
@@ -183,7 +179,6 @@ class UserEditor:
                 callback += f"{self.point_id}"
             elif self.point_id and self.extra_information_point_id:
                 callback += f"{self.point_id}_{self.extra_information_point_id}"
-            print(f"Previous menu button callback: {callback}")
             return InlineKeyboardButton(self.return_to_previous_menu_message, callback_data=callback)
         return None
 

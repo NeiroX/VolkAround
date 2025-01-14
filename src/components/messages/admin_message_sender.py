@@ -58,12 +58,17 @@ class AdminMessageSender:
 
     @staticmethod
     async def send_form_text_field_message(update: Update, field_message: str,
-                                           field_current_state: str = None, skip_button: bool = True) -> None:
+                                           field_current_state: str = None, skip_button: bool = True,
+                                           delete_link_button: bool = False) -> None:
         await AdminMessageSender.send_current_state(update, field_current_state)
         sender = AdminMessageSender.get_message_sender(update)
         if sender:
+            keyboard = list()
             if skip_button:
-                keyboard = [[InlineKeyboardButton(SKIP_FIELD_BUTTON, callback_data=SKIP_FIELD_CALLBACK)]]
+                keyboard.append([InlineKeyboardButton(SKIP_FIELD_BUTTON, callback_data=SKIP_FIELD_CALLBACK)])
+            if delete_link_button:
+                keyboard.append([InlineKeyboardButton(DELETE_LINK_BUTTON, callback_data=DELETE_LINK_CALLBACK)])
+            if keyboard:
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await sender.message.reply_text(field_message, reply_markup=reply_markup)
             else:
@@ -107,18 +112,12 @@ class AdminMessageSender:
             await sender.message.reply_text(message, reply_markup=reply_markup)
 
     @staticmethod
-    async def approve_message(update: Update, message: str, callback: str) -> None:
+    async def approve_message(update: Update, message: str, callback: str, approve_button_text: str) -> None:
         sender = AdminMessageSender.get_message_sender(update)
         if sender:
-            # TODO: Change
-            if callback == SEND_ECHO_CALLBACK:
-                keyboard = [[InlineKeyboardButton(APPROVE_BUTTON,
-                                                  callback_data=f"{callback}")],
-                            [InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
-            else:
-                keyboard = [[InlineKeyboardButton(APPROVE_BUTTON,
-                                                  callback_data=f"{APPROVE_DELETING_CALLBACK}|{callback}")],
-                            [InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
+            keyboard = [[InlineKeyboardButton(approve_button_text,
+                                              callback_data=f"{callback}")],
+                        [InlineKeyboardButton(BACK_TO_EXCURSIONS_BUTTON, callback_data=SHOW_EXCURSIONS_CALLBACK)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await sender.message.reply_text(message, reply_markup=reply_markup)
 

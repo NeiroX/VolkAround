@@ -32,26 +32,17 @@ DEBUG = config("DEBUG", cast=bool, default=False)
 
 # PosgreSQL database settings
 # Local
-if DEBUG:
-    DATABASE_USER = config("DATABASE_USER", default=None, cast=str)
-    DATABASE_NAME = config("DATABASE_NAME", default=None, cast=str)
-    DATABASE_PASSWORD = config("DATABASE_PASSWORD", default=None, cast=str)
-    DATABASE_HOST = config("DATABASE_HOST", default=None, cast=str)
-    DATABASE_PORT = config("DATABASE_PORT", default=None, cast=int)
-    DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-# Heroku
+DATABASE_URL = config('DATABASE_URL', default=None, cast=str)
+if DATABASE_URL:
+    parsed_url = urlparse(DATABASE_URL)
+    DATABASE_USER = parsed_url.username
+    DATABASE_PASSWORD = parsed_url.password
+    DATABASE_HOST = parsed_url.hostname
+    DATABASE_PORT = parsed_url.port if parsed_url.port else "5432"  # Default to 5432 if no port is provided
+    DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
+    # DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 else:
-    DATABASE_URL = config('DATABASE_URL', default=None, cast=str)
-    if DATABASE_URL:
-        parsed_url = urlparse(DATABASE_URL)
-        DATABASE_USER = parsed_url.username
-        DATABASE_PASSWORD = parsed_url.password
-        DATABASE_HOST = parsed_url.hostname
-        DATABASE_PORT = parsed_url.port if parsed_url.port else "5432"  # Default to 5432 if no port is provided
-        DATABASE_NAME = parsed_url.path.lstrip('/')  # Remove the leading '/' from the path
-        DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-    else:
-        raise ValueError("DATABASE_URL is not set in the environment variables")
+    raise ValueError("DATABASE_URL is not set in the environment variables")
 
 AWS_SERVER_PUBLIC_KEY = config('AWS_ACCESS_KEY_ID', default=None, cast=str)
 AWS_SERVER_SECRET_KEY = config('AWS_SECRET_ACCESS_KEY', default=None, cast=str)
