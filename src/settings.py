@@ -23,6 +23,7 @@ logger.addHandler(info_logger)
 
 # Telegram TOKEN
 TOKEN = config("TELEGRAM_BOT_TOKEN")
+CREATE_TABLES = config("CREATE_TABLES", default=False, cast=bool)
 
 # Debug
 DEBUG = config("DEBUG", cast=bool, default=False)

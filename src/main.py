@@ -52,11 +52,11 @@ def test_connection():
 
 if __name__ == "__main__":
     # Example log messages
-    logging.info("Running main file!!!")
+    logging.info("Running main file")
     if not TOKEN:
         raise ValueError("TELEGRAM_BOT_TOKEN is not set in the environment or .env file")
     else:
-        logging.info(f"Using token: {TOKEN[:5]}...")  # Replace with your bot token
+        logging.info(f"Using token: {TOKEN[:3]}...")  # Replace with your bot token
     # Test connection to database and apply migrations
     test_connection()
     apply_migrations()

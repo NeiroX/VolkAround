@@ -1,7 +1,9 @@
 import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from src.settings import DATABASE_URL
+
+from src.database.models import Base
+from src.settings import DATABASE_URL, CREATE_TABLES
 import logging
 
 def get_db_connection():
@@ -24,6 +26,7 @@ def create_session() -> Session:
     # Construct the connection string manually
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(bind=engine)
-    # Base.metadata.create_all(engine)
+    if CREATE_TABLES:
+        Base.metadata.create_all(engine)
 
     return SessionLocal()
