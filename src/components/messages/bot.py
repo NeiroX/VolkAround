@@ -806,7 +806,10 @@ class Bot:
                     self._delete_element_files(point)
                     for extra_point in point.get_extra_information_points():
                         self._delete_element_files(extra_point)
-            self.data_loader.clear_database()
+                        self.data_loader.delete_information_part(extra_point.get_id())
+                    self.data_loader.delete_point(point.get_id())
+                self.data_loader.delete_excursion(excursion.get_id())
+            # self.data_loader.clear_database()
             self.excursions.clear()
             await AdminMessageSender.send_success_message(update)
 

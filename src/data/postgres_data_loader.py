@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text, ForeignKey, Table, text
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Dict
 from src.database.models import InformationPartModel, ExcursionModel, UserStateModel, PointModel, Base
