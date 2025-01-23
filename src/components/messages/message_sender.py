@@ -1,5 +1,6 @@
 from io import BytesIO
 
+import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto, InputMediaAudio
 from telegram.ext import CallbackContext
 
@@ -154,6 +155,14 @@ class MessageSender:
             keyboard.append([InlineKeyboardButton(OPEN_LOCATION_IN_GOOGLE_MAPS, url=point_location_link)])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
+        location_description_text = ''.join((
+            f"*+------ ТОЧКА {map_numbers_to_emoji_unicode(point_number)} ------+*\n"
+            f"Ваш следующий пункт назначения:\n"
+            f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
+            f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*\n"
+            f"*+----------------------+*"
+        ))
+
         if point.get_location_photo():
             try:
                 # Fetch the photo from S3
@@ -164,17 +173,10 @@ class MessageSender:
                 if s3_file_obj:
                     # Read the file content into a BytesIO object
                     s3_file_obj.seek(0)
-
                     await query.message.reply_photo(
                         photo=s3_file_obj,
-                        caption=(
-                            f"*+------ ТОЧКА {map_numbers_to_emoji_unicode(point_number)} ------+*\n"
-                            f"Ваш следующий пункт назначения:\n\n"
-                            f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                            f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*\n"
-                            f"*+----------------------+*",
-                        ),
-                        parse_mode="Markdown",
+                        caption=location_description_text,
+                        parse_mode=telegram.constants.ParseMode.MARKDOWN,
                         reply_markup=reply_markup,
                     )
                 else:
@@ -184,12 +186,8 @@ class MessageSender:
                 await query.message.reply_text("Произошла ошибка при загрузке фотографии.")
         else:
             await query.message.reply_text(
-                f"*+------ ТОЧКА {map_numbers_to_emoji_unicode(point_number)} ------+*\n"
-                f"Ваш следующий пункт назначения:\n\n"
-                f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*\n"
-                f"*+----------------------+*",
-                parse_mode="Markdown",
+                location_description_text,
+                parse_mode=telegram.constants.ParseMode.MARKDOWN,
                 reply_markup=reply_markup,
             )
 
@@ -253,10 +251,10 @@ class MessageSender:
         part_emoji = LOCATION_PIN_EMOJI if part.__class__ == Point else SUB_THEME_EMOJI
         text_content = (f"{part_emoji} *{part.get_name()}*\n"
                         f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n"
-                        f"{text_content}\n")
+                        f"{text_content}\n"
+                        f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n\n")
         if part.get_link():
             text_content += f"{LINK_EMOJI} {part.get_link()}\n"
-        text_content += f"~~~~~~~~~~ ∞ ~~~~~~~~~~"
         await query.message.reply_text(text_content, parse_mode="Markdown")
 
     @staticmethod
