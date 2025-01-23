@@ -1,4 +1,3 @@
-import re
 from typing import List, Union
 from urllib.parse import urlparse
 
@@ -7,13 +6,12 @@ from telegram import Update, InlineKeyboardButton
 from telegram.error import TelegramError
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, filters, \
     MessageHandler
-from string import punctuation
 from src.data.postgres_data_loader import PostgresLoadManager
 from src.data.s3bucket import save_file_to_s3, s3_delete_file
 
 from src.components.excursion.point.information_part import InformationPart
 from src.components.messages.admin_message_sender import AdminMessageSender
-from src.components.messages.message_sender import MessageSender
+from src.components.messages.message_sender import MessageSender, escape_markdown
 from src.components.excursion.excursion import Excursion
 from src.components.excursion.point.point import Point
 from src.components.user.user_state import UserState
@@ -844,7 +842,7 @@ class Bot:
         if user_state.does_have_admin_access() and user_state.user_editor.get_sending_echo():
             message = user_state.user_editor.get_echo_text()
             message = f"{NEWS_EMOJI} Новость от VolkAround:\n{message}"
-            message = self.escape_markdown(message)
+            message = escape_markdown(message)
             for user_state in self.user_states.values():
                 chat_id = user_state.get_chat_id()
                 if chat_id:
@@ -883,13 +881,6 @@ class Bot:
             if location_photo: files_to_delete.append(location_photo)
         self._delete_files(files_to_delete)
 
-    @staticmethod
-    def escape_markdown(text: str) -> str:
-        """
-        Escapes special characters for MarkdownV2 parse mode.
-        """
-        special_characters = r'[!"#$%&\'()*+,-./:;<=>?@\[\\\]^_`{|}~]'
-        return re.sub(special_characters, r'\\\g<0>', text)
 
     @staticmethod
     def _delete_files(files: List[str]):

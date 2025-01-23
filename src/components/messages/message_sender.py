@@ -2,7 +2,7 @@ from io import BytesIO
 
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Update, InputMediaPhoto, InputMediaAudio
-from telegram.ext import CallbackContext
+import re
 
 from src.components.user.user_state import UserState
 from src.constants import *
@@ -31,6 +31,12 @@ def map_numbers_to_emoji_unicode(number: int) -> str:
     }
     return ''.join([number_to_emoji_unicode.get(int(digit), digit) for digit in str(number)])
 
+def escape_markdown(text: str) -> str:
+    """
+    Escapes special characters for MarkdownV2 parse mode.
+    """
+    special_characters = r'[!"#$%&\'()*+,-./:;<=>?@\[\\\]^_`{|}~]'
+    return re.sub(special_characters, r'\\\g<0>', text)
 
 class MessageSender:
     """Handles message formatting and sending."""
@@ -249,13 +255,14 @@ class MessageSender:
                 await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
         text_content = part.get_text()
         part_emoji = LOCATION_PIN_EMOJI if part.__class__ == Point else SUB_THEME_EMOJI
-        text_content = (f"{part_emoji} *{part.get_name()}*\n"
+        text_content = ''.join((f"{part_emoji} {part.get_name()}\n"
                         f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n"
                         f"{text_content}\n"
-                        f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n\n")
+                        f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n\n"))
         if part.get_link():
             text_content += f"{LINK_EMOJI} {part.get_link()}\n"
-        await query.message.reply_text(text_content, parse_mode="Markdown")
+        text_content = escape_markdown(text_content).replace(part.get_name(), f"*{part.get_name()}*", 1)
+        await query.message.reply_text(text_content, parse_mode=telegram.constants.ParseMode.MARKDOWN_V2)
 
     @staticmethod
     async def send_feedback_request(query: CallbackQuery) -> None:
