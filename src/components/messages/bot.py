@@ -145,14 +145,14 @@ class Bot:
         await MessageSender.send_excursion_start_message(query, excursion, user_state.does_have_admin_access())
         # await self.send_point_information(update, part)
 
-    @staticmethod
-    async def send_point_information(update: Update, point: Point):
+    async def send_point_information(self, update: Update, point: Point):
         """Send information about the current part."""
         query = update.callback_query
         await MessageSender.delete_previous_buttons(query)
+        user_state = self.get_user_state(update)
 
         # Send location details (photo, name, address)
-        await MessageSender.send_point_location_info(query, point)
+        await MessageSender.send_point_location_info(query, point, user_state.current_excursion_step + 1)
 
     async def _handle_arrival(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles the 'I'm Here!' button press."""

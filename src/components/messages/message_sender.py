@@ -14,6 +14,23 @@ from typing import Dict, List, Union
 from src.data.s3bucket import s3_fetch_file
 
 
+def map_numbers_to_emoji_unicode(number: int) -> str:
+    # Define a dictionary mapping numbers to their emoji Unicode escape sequences
+    number_to_emoji_unicode = {
+        0: '\U00000030\U0000FE0F\U000020E3',  # 0️⃣
+        1: '\U00000031\U0000FE0F\U000020E3',  # 1️⃣
+        2: '\U00000032\U0000FE0F\U000020E3',  # 2️⃣
+        3: '\U00000033\U0000FE0F\U000020E3',  # 3️⃣
+        4: '\U00000034\U0000FE0F\U000020E3',  # 4️⃣
+        5: '\U00000035\U0000FE0F\U000020E3',  # 5️⃣
+        6: '\U00000036\U0000FE0F\U000020E3',  # 6️⃣
+        7: '\U00000037\U0000FE0F\U000020E3',  # 7️⃣
+        8: '\U00000038\U0000FE0F\U000020E3',  # 8️⃣
+        9: '\U00000039\U0000FE0F\U000020E3',  # 9️⃣
+    }
+    return ''.join([number_to_emoji_unicode.get(int(digit), digit) for digit in str(number)])
+
+
 class MessageSender:
     """Handles message formatting and sending."""
 
@@ -129,7 +146,7 @@ class MessageSender:
             print(f"Error deleting buttons: {e}")
 
     @staticmethod
-    async def send_point_location_info(query, point) -> None:
+    async def send_point_location_info(query: CallbackQuery, point: Point, point_number: int) -> None:
         """Sends location details (photo, name, address) for the current part."""
         keyboard = [[InlineKeyboardButton(IM_HERE_BUTTON, callback_data=ARRIVED_CALLBACK)]]
         point_location_link = point.get_location_link()
@@ -151,8 +168,11 @@ class MessageSender:
                     await query.message.reply_photo(
                         photo=s3_file_obj,
                         caption=(
+                            f"*+------ ТОЧКА {map_numbers_to_emoji_unicode(point_number)} ------+*\n"
+                            f"Ваш следующий пункт назначения:\n\n"
                             f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                            f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*"
+                            f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*\n"
+                            f"*+----------------------+*",
                         ),
                         parse_mode="Markdown",
                         reply_markup=reply_markup,
@@ -164,9 +184,11 @@ class MessageSender:
                 await query.message.reply_text("Произошла ошибка при загрузке фотографии.")
         else:
             await query.message.reply_text(
+                f"*+------ ТОЧКА {map_numbers_to_emoji_unicode(point_number)} ------+*\n"
                 f"Ваш следующий пункт назначения:\n\n"
                 f"{LOCATION_PIN_EMOJI} *{point.get_name()}*\n"
-                f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*",
+                f"{LOCATION_PIN_EMOJI} Адрес: *{point.get_address()}*\n"
+                f"*+----------------------+*",
                 parse_mode="Markdown",
                 reply_markup=reply_markup,
             )
@@ -228,9 +250,14 @@ class MessageSender:
             except Exception as e:
                 await MessageSender.send_error_message(query, AUDIO_IS_NOT_FOUND_ERROR)
         text_content = part.get_text()
+        part_emoji = LOCATION_PIN_EMOJI if part.__class__ == Point else SUB_THEME_EMOJI
+        text_content = (f"{part_emoji} *{part.get_name()}*\n"
+                        f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n"
+                        f"{text_content}\n")
         if part.get_link():
-            text_content = f"{text_content}\n{LINK_EMOJI} {part.get_link()}"
-        await query.message.reply_text(text_content)
+            text_content += f"{LINK_EMOJI} {part.get_link()}\n"
+        text_content += f"~~~~~~~~~~ ∞ ~~~~~~~~~~"
+        await query.message.reply_text(text_content, parse_mode="Markdown")
 
     @staticmethod
     async def send_feedback_request(query: CallbackQuery) -> None:
