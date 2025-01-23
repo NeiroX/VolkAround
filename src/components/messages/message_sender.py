@@ -261,7 +261,8 @@ class MessageSender:
                         f"~~~~~~~~~~ ∞ ~~~~~~~~~~\n\n"))
         if part.get_link():
             text_content += f"{LINK_EMOJI} {part.get_link()}\n"
-        text_content = escape_markdown(text_content).replace(part.get_name(), f"*{part.get_name()}*", 1)
+        escaped_part_name = escape_markdown(part.get_name())
+        text_content = escape_markdown(text_content).replace(escaped_part_name, f"*{escaped_part_name}*", 1)
         await query.message.reply_text(text_content, parse_mode=telegram.constants.ParseMode.MARKDOWN_V2)
 
     @staticmethod
