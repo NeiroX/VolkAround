@@ -14,20 +14,71 @@ VolkAround is a Telegram bot built with Python that provides interactive experie
 
 ## 📁 Project Structure
 VolkAround/
-├── .venv/                  # Virtual environment
-├── alembic/                # Alembic migration scripts
-├── media/                  # Media assets (if stored locally)
-├── migrations/             # Optional migration management
-├── src/
-│   ├── components/         # Core bot logic (points, parts)
-│   ├── data/               # Optional data files
-│   ├── database/           # DB models and engine
-│   ├── constants.py        # Shared constants
-│   ├── main.py             # Bot entry point
-│   └── settings.py         # Environment/config handling
-├── Procfile                # Heroku process declaration
-├── requirements.txt        # Python dependencies
-└── README.md               # You are here
+
+├── 🗂️ alembic/            → Alembic migration scripts
+
+├── 🖼️ media/              → Media assets (local, optional)
+
+├── 🧬 migrations/         → Manual or custom migration logic
+
+📁 src/
+
+├── 🧩 components/                  # Core bot logic
+
+│   ├── 🗺️ excursion/              # Excursion models and behavior
+
+│   │   ├── 📄 excursion.py
+
+│   │   ├── 📊 stats_object.py
+
+│   │   └── 📍 point/              # Point and extra content
+
+│   │       ├── 📄 information_part.py
+
+│   │       └── 📄 point.py
+
+│   │
+│   ├── 🧾 field.py                 # Field logic for admin editing
+
+│   ├── ✉️ messages/              # Bot message sending
+
+│   │   ├── 👮 admin_message_sender.py
+
+│   │   ├── 🤖 bot.py
+
+│   │   └── 📬 message_sender.py
+
+│   └── 👤 user/                   # User state and interaction
+
+│       ├── 🛠️ user_editor.py
+
+│       └── 👤 user_state.py
+│
+├── 📌 constants.py                # Shared constants (e.g. field names, emoji)
+
+├── 📦 data/                       # Data helpers
+
+│   ├── 🐘 postgres_data_loader.py  # PostgreSQL loader
+
+│   └── ☁️ s3bucket.py             # AWS S3 interface
+
+│
+├── 🗃️ database/                   # DB schema and connection
+
+│   ├── 🧬 models.py               # SQLAlchemy models
+
+│   └── 🔌 session.py              # DB session setup
+
+│
+├── 🚀 main.py                     # Entry point for running the bot
+
+└── ⚙️ settings.py                 # Environment/config (from `.env`)
+
+├── 📜 Procfile            → Heroku process declaration (entry point)
+
+├── README.md                  # 📖 Project overview
+
+└── LICENSE.md                 # 📜 Custom license file
 
 ## 📄 License
 
